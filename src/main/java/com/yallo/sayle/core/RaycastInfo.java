@@ -6,6 +6,15 @@ public class RaycastInfo {
     public float distance;
     public boolean solid;
 
+    public RaycastInfo(float distance, boolean solid) {
+        this.distance = distance;
+        this.solid = solid;
+    }
+
+    public RaycastInfo min(RaycastInfo other) {
+        return distance < other.distance ? this : other;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

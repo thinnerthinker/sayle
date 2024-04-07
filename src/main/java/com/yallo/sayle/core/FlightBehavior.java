@@ -13,13 +13,17 @@ public class FlightBehavior {
     private int terrainSampleResolution;
     private float maxDepthDelta;
 
-    public FlightBehavior(int terrainSampleResolution, float maxDepthDelta) {
+    private float fovX, fovY;
+
+    public FlightBehavior(int terrainSampleResolution, float maxDepthDelta, float fovX, float fovY) {
         this.terrainSampleResolution = terrainSampleResolution;
         this.maxDepthDelta = maxDepthDelta;
+        this.fovX = fovX;
+        this.fovY = fovY;
     }
 
     public Vector2f desiredInput(CharacterState state, RaycastableTerrain terrain, RegionCostFunction cost) {
-        float viewportHalfWidth = (float) Math.tan(state.fovX), viewportHalfHeight = (float) Math.tan(state.fovY);
+        float viewportHalfWidth = (float) Math.tan(fovX), viewportHalfHeight = (float) Math.tan(fovY);
         float aspectRatio = viewportHalfWidth / viewportHalfHeight;
 
         int raysX = (int) (aspectRatio * terrainSampleResolution), raysY = terrainSampleResolution;

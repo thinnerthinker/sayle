@@ -15,6 +15,42 @@
     </properties>
 
     <dependencies>
+        <!-- https://mvnrepository.com/artifact/org.lwjgl/lwjgl -->
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl</artifactId>
+            <version>3.3.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl</artifactId>
+            <version>3.3.1</version>
+            <classifier>natives-linux</classifier>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.lwjgl/lwjgl-opengl -->
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl-opengl</artifactId>
+            <version>3.3.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl-opengl</artifactId>
+            <version>3.3.1</version>
+            <classifier>natives-linux</classifier>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.lwjgl/lwjgl-glfw -->
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl-glfw</artifactId>
+            <version>3.3.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl-glfw</artifactId>
+            <version>3.3.1</version>
+            <classifier>natives-linux</classifier>
+        </dependency>
         <!-- https://mvnrepository.com/artifact/org.joml/joml -->
         <dependency>
             <groupId>org.joml</groupId>
@@ -30,7 +66,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.0.0</version>
                 <configuration>
-                    <mainClass>com.yallo.sayle.Main</mainClass>
+                    <mainClass>com.yallo.sayle.sandbox.Main</mainClass>
                 </configuration>
             </plugin>
             <plugin>
@@ -47,7 +83,7 @@
                             <transformers>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>com.yallo.sayle.Main</mainClass>
+                                    <mainClass>com.yallo.sayle.sandbox.Main</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>

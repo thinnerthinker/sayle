@@ -14,11 +14,15 @@ public interface RegionCostFunction {
         return new Vector2f(position.x - sampleWidth / 2f, position.y - sampleHeight / 2f).length();
     }
 
-    static RegionCostFunction safest(float minDepth, float maxDepth, int sampleWidth, int sampleHeight) {
+    static RegionCostFunction safest(float fovX, float fovY, int sampleSize) {
+        float viewportHalfWidth = (float) Math.tan(fovX), viewportHalfHeight = (float) Math.tan(fovY);
+        float aspectRatio = viewportHalfWidth / viewportHalfHeight;
+
+        float sampleWidth = aspectRatio * sampleSize, sampleHeight = sampleSize;
         float maxDistance = new Vector2f(sampleWidth, sampleHeight).length() / 2f;
 
         return region -> {
-            float d = RegionCostFunction.distanceFromViewportCenter(region.getCenter(), sampleWidth, sampleHeight) / maxDistance;
+            float d = RegionCostFunction.distanceFromViewportCenter(region.getCenter(), (int) sampleWidth, (int) sampleHeight) / maxDistance;
             final float weight = 1;
 
             return weight * d + 1 / region.info.distance;
