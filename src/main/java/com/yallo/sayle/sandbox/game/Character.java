@@ -30,13 +30,15 @@ public class Character {
     }
 
     public void pushInput(Vector2f mouseMovement, float dt) {
+        //System.out.println(mouseMovement.y);
+
         angleX -= rotationSpeed * mouseMovement.x * dt;
         angleY -= rotationSpeed * mouseMovement.y * dt;
 
         updateTransform();
     }
 
-    private void updateTransform() {
+    public void updateTransform() {
         Matrix4f rotation = new Matrix4f().rotationYXZ(angleX, angleY, 0);
         state.forward = rotation.transformDirection(new Vector3f(0, 0, -1));
 
@@ -45,7 +47,7 @@ public class Character {
         state.up = rotation.transformDirection(originalUp);
         state.right = new Vector3f(state.forward).cross(state.up);
 
-        model.identity().mul(rotation).translate(state.position);
+        model = new Matrix4f().translate(state.position).mul(rotation);
     }
 
     public void draw(Camera camera) {

@@ -22,4 +22,28 @@ class TerrainSampleRegion {
     public Vector2f getCenter() {
         return center;
     }
+
+    public Vector2f closestPointTowards(Vector2f target) {
+        System.out.println("target:" + target.x + " " + target.y + " reg: " + position.x + " " + position.y + " " + width + " " + height);
+
+        if (target.x >= position.x && target.x <= (position.x + width) &&
+                target.y >= position.y && target.y <= (position.y + height)) {
+            System.out.println("bacc");
+            return target;
+        }
+
+        Vector2f dir = new Vector2f(target.x - center.x, target.y - center.y).normalize();
+
+        float halfWidth = width / 2f;
+        float halfHeight = height / 2f;
+
+        float xProjection = halfWidth * dir.x;
+        float yProjection = halfHeight * dir.y;
+
+        xProjection = Math.max(-halfWidth, Math.min(xProjection, halfWidth));
+        yProjection = Math.max(-halfHeight, Math.min(yProjection, halfHeight));
+
+        return new Vector2f(center.x + xProjection, center.y + yProjection);
+    }
+
 }

@@ -11,6 +11,9 @@ public class RaycastInfo {
         this.solid = solid;
     }
 
+    public RaycastInfo() {
+    }
+
     public RaycastInfo min(RaycastInfo other) {
         return distance < other.distance ? this : other;
     }
@@ -24,7 +27,8 @@ public class RaycastInfo {
     }
 
     public boolean similar(RaycastInfo that, float tolerance) {
-        return Math.abs(distance - that.distance) < tolerance && solid == that.solid;
+        return (Float.isInfinite(distance) && Float.isInfinite(that.distance)) ||
+                (Math.abs(distance - that.distance) < tolerance && solid == that.solid);
     }
 
     @Override

@@ -17,7 +17,7 @@ import static org.lwjgl.system.MemoryStack.stackPush;
 
 public abstract class Game {
     // The window handle
-    private long window;
+    protected long window;
 
     public void run() {
         init();

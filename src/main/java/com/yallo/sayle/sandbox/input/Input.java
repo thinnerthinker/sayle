@@ -14,8 +14,8 @@ public class Input {
     private static double mouseScroll, mouseScrollPrevious;
 
     public static void init(long window) {
-        keyboardCurrent = new KeyboardState(window, GLFW_KEY_W, GLFW_KEY_A, GLFW_KEY_S, GLFW_KEY_D, GLFW_KEY_L, GLFW_KEY_LEFT_CONTROL, GLFW_KEY_LEFT_SHIFT, GLFW_KEY_O, GLFW_KEY_F5);
-        keyboardPrevious = new KeyboardState(window, GLFW_KEY_W, GLFW_KEY_A, GLFW_KEY_S, GLFW_KEY_D, GLFW_KEY_L, GLFW_KEY_LEFT_CONTROL, GLFW_KEY_LEFT_SHIFT, GLFW_KEY_O, GLFW_KEY_F5);
+        keyboardCurrent = new KeyboardState(window, GLFW_KEY_SPACE);
+        keyboardPrevious = new KeyboardState(window, GLFW_KEY_SPACE);
 
         mouseCurrent = new MouseState(window, true);
         mousePrevious = new MouseState(window, false);

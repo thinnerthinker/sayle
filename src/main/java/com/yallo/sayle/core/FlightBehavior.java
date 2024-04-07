@@ -22,127 +22,93 @@ public class FlightBehavior {
         this.fovY = fovY;
     }
 
-    public Vector2f desiredInput(CharacterState state, RaycastableTerrain terrain, RegionCostFunction cost) {
+    public Vector2f desiredInput(CharacterState state, RaycastableTerrain terrain, RegionEvaluatorFunction eval) {
         float viewportHalfWidth = (float) Math.tan(fovX), viewportHalfHeight = (float) Math.tan(fovY);
         float aspectRatio = viewportHalfWidth / viewportHalfHeight;
 
         int raysX = (int) (aspectRatio * terrainSampleResolution), raysY = terrainSampleResolution;
-        RaycastInfo[][] depthField = new RaycastInfo[raysX][raysY];
+        RaycastInfo[][] depthField = new RaycastInfo[raysY][raysX];
 
-        for (int i = 0; i < raysX; i++) {
-            for (int j = 0; j < raysY; j++) {
-                Vector2f rayTilt = new Vector2f(2 * ((i + 0.5f) / raysX - 0.5f), 2 * ((j + 0.5f) / raysY - 0.5f));
-                Vector3f dir = state.right.mul(rayTilt.x * viewportHalfWidth)
-                        .add(state.up.mul(rayTilt.y * viewportHalfHeight))
-                        .add(state.forward)
+
+        for (int y = 0; y < raysY; y++) {
+            for (int x = 0; x < raysX; x++) {
+                Vector2f rayTilt = new Vector2f(2 * ((x + 0.5f) / raysX - 0.5f), 2 * ((y + 0.5f) / raysY - 0.5f));
+                Vector3f dir = new Vector3f(state.right).mul(rayTilt.x * viewportHalfWidth)
+                        .add(new Vector3f(state.up).mul(-rayTilt.y * viewportHalfHeight))
+                        .add(new Vector3f(state.forward))
                         .normalize();
 
-                depthField[i][j] = terrain.raycast(state.position, dir);
+                //System.out.println(state.position.z);
+
+                depthField[y][x] = terrain.raycast(new Vector3f(state.position), dir);
             }
         }
 
-        TerrainSampleRegion bestHole = getRectRegions(depthField).stream().min(Comparator.comparing(cost::calculate)).get();
-        Vector2f holeCenter = bestHole.getCenter();
+        for (int i = 0; i < raysY; i++) {
+            for (int j = 0; j < raysX; j++) {
+                System.out.print(depthField[i][j].distance + " ");
+            }
+            System.out.println();
+        }
+        System.out.println();
 
-        return new Vector2f(2 * (holeCenter.x / raysX - 0.5f), 2 * (holeCenter.y / raysY - 0.5f));
+        for (var r : getRectRegions(depthField)) {
+            System.out.println(r.position.x + " " + r.position.y + " " + r.width + " " + r.height);
+        }
+        System.out.println();
+
+        var bestEval = getRectRegions(depthField).stream().map(eval::calculate).min(Comparator.comparing(e -> e.cost)).get();
+        //System.out.println(bestHole.position.x + " " + bestHole.position.y + " " + bestHole.width + " " + bestHole.height);
+
+        Vector2f target = bestEval.suggestedPoint;
+        System.out.println(target.x + " " + target.y + " " + bestEval.cost);
+
+        return new Vector2f(2 * (target.x / raysX - 0.5f), 2 * (target.y / raysY - 0.5f));
     }
 
     List<TerrainSampleRegion> getRectRegions(RaycastInfo[][] sample) {
-        // TODO: currently using greedy meshing. maybe try backtracking an optimal solution?
         List<TerrainSampleRegion> regions = new ArrayList<>();
-
         HashSet<Vector2i> visited = new HashSet<>();
 
-        for (int i = 0; i < sample.length; i++) {
-            for (int j = 0; j < sample[0].length; j++) {
-                if (visited.contains(new Vector2i(i, j))) {
+        for (int y = 0; y < sample.length; y++) {
+            for (int x = 0; x < sample[0].length; x++) {
+                if (visited.contains(new Vector2i(x, y))) {
                     continue;
                 }
 
-                RaycastInfo current = sample[i][j];
+                RaycastInfo current = sample[y][x];
+                int maxWidth = sample[0].length - x;
+                int maxHeight = sample.length - y;
 
-                int width = 0;
-                for (; i + width < sample.length; width++) {
-                    if (!current.similar(sample[i + width][j], maxDepthDelta)) {
+                int width;
+                for (width = 1; width < maxWidth; width++) {
+                    if (!current.similar(sample[y][x + width], maxDepthDelta)) {
                         break;
                     }
-
-                    visited.add(new Vector2i(i + width, j));
                 }
 
-                int height = 1;
-                for (; j + height < sample[0].length; height++) {
-                    boolean interrupted = false;
-
-                    for (int x = 0; x < width; x++) {
-                        if (!current.similar(sample[i + width][j], maxDepthDelta)) {
-                            interrupted = true;
-                            break;
+                int height;
+                outerLoop:
+                for (height = 1; height < maxHeight; height++) {
+                    for (int wx = 0; wx < width; wx++) {
+                        if (!current.similar(sample[y + height][x + wx], maxDepthDelta)) {
+                            break outerLoop;
                         }
                     }
+                }
 
-                    if (interrupted) {
-                        break;
-                    }
-
-                    for (int x = 0; x < width; x++) {
-                        visited.add(new Vector2i(i + width, j));
+                // Mark all cells in the region as visited
+                for (int wy = 0; wy < height; wy++) {
+                    for (int wx = 0; wx < width; wx++) {
+                        visited.add(new Vector2i(x + wx, y + wy));
                     }
                 }
 
-                regions.add(new TerrainSampleRegion(new Vector2i(i , j), width, height, current));
+                regions.add(new TerrainSampleRegion(new Vector2i(x, y), width, height, current));
             }
         }
 
         return regions;
     }
 
-    List<TerrainSampleRegion> getRegions(RaycastInfo[][] sample) {
-        List<TerrainSampleRegion> regions = new ArrayList<>();
-
-        HashSet<Vector2i> visited = new HashSet<>();
-        ArrayList<Vector2i> queue = new ArrayList<>();
-
-        for (int i = 0; i < sample.length; i++) {
-            for (int j = 0; j < sample[0].length; j++) {
-                Vector2i startVertex = new Vector2i(i, j);
-                if (visited.contains(startVertex)) {
-                    continue;
-                }
-
-                RaycastInfo startInfo = sample[i][j];
-                TerrainSampleRegion region = new TerrainSampleRegion(startVertex, 1, 1, startInfo);
-                regions.add(region);
-
-                queue.add(startVertex);
-
-                for (int v = 0; v < queue.size(); v++) {
-                    Vector2i vertex = queue.get(v);
-                    if (visited.contains(vertex)) {
-                        continue;
-                    }
-
-                    region.position.x = Math.min(region.position.x, vertex.x);
-                    region.position.y = Math.min(region.position.y, vertex.y);
-                    region.width = Math.max(region.width, vertex.x - region.position.x + 1);
-                    region.height = Math.max(region.height, vertex.y - region.position.y + 1);
-
-                    visited.add(queue.get(v));
-
-                    if (i > 0 && sample[i - 1][j].similar(startInfo, maxDepthDelta))
-                        queue.add(new Vector2i(i - 1, j));
-                    if (i < sample.length - 1 && sample[i + 1][j].similar(startInfo, maxDepthDelta))
-                        queue.add(new Vector2i(i + 1, j));
-                    if (j > 0 && sample[i][j - 1].similar(startInfo, maxDepthDelta))
-                        queue.add(new Vector2i(i, j - 1));
-                    if (j < sample[0].length - 1 && sample[i][j + 1].similar(startInfo, maxDepthDelta))
-                        queue.add(new Vector2i(i, j + 1));
-                }
-
-                queue.clear();
-            }
-        }
-
-        return regions;
-    }
 }

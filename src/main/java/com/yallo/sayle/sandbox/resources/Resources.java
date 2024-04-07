@@ -4,7 +4,7 @@ public class Resources {
     private static Shader terrainShader;
 
     public static void init() {
-        terrainShader = loadShader("src/main/Assets/terrain.vs", "src/main/Assets/terrain.fs");
+        terrainShader = loadShader("src/main/assets/terrain.vs", "src/main/assets/terrain.fs");
     }
 
     private static Shader loadShader(String vertex, String fragment) {
@@ -12,9 +12,8 @@ public class Resources {
             return new Shader(vertex, fragment);
         } catch (Exception e) {
             e.printStackTrace();
+            throw new RuntimeException(e.getMessage());
         }
-
-        return null;
     }
 
     public static Shader getTerrainShader() {

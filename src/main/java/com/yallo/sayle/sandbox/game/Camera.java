@@ -30,7 +30,7 @@ public class Camera {
 
         this.distance = distance;
 
-        pivotPosition = new Vector3f(0.0f, 0.0f, 0.f);
+        pivotPosition = new Vector3f(0.0f, 0.0f, 0f);
 
         aspect = 16.0f / 9.0f;
         nearPlane = 0.001f;
@@ -60,6 +60,10 @@ public class Camera {
         Vector3f posOnSphere = rotation.transformDirection(new Vector3f(0, 0, 1)).mul(distance);
         Vector3f position = pivotPosition.add(posOnSphere);
 
+        Vector3f originalTarget = new Vector3f(0.0f, 0.0f, -1.0f);
+        Vector3f rotatedTarget = rotation.transformDirection(originalTarget);
+        Vector3f finalTarget = new Vector3f(position).add(rotatedTarget);
+
         forward = rotation.transformDirection(new Vector3f(0, 0, -1));
 
         Vector3f originalUp = new Vector3f(0.0f, 1.0f, 0.0f);
@@ -68,7 +72,7 @@ public class Camera {
         up = rotatedUp;
         right = new Vector3f(forward).cross(up);
 
-        view = new Matrix4f().lookAt(position, pivotPosition, rotatedUp);
+        view = new Matrix4f().lookAt(position, finalTarget, rotatedUp);
     }
 
     public Vector3f unproject(Vector2f screen) {
@@ -92,7 +96,7 @@ public class Camera {
     }
 
     public void setPivotPosition(Vector3f pivotPosition) {
-        this.pivotPosition = pivotPosition;
+        this.pivotPosition = new Vector3f(pivotPosition);
     }
 
     public Matrix4f getViewProjection() {
