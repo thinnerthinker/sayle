@@ -50,11 +50,14 @@ public class SolidBox {
         mesh = new Mesh(vertices, normals, indices);
     }
 
+    public static SolidBox fromExtents(Vector3f center, float hwidth, float hheight, float hdepth) {
+        Vector3f min = new Vector3f(center.x - hwidth, center.y - hheight, center.z - hdepth);
+        Vector3f max = new Vector3f(center.x + hwidth, center.y + hheight, center.z + hdepth);
+        return new SolidBox(min, max);
+    }
+
     public RaycastInfo raycast(Vector3f rayStart, Vector3f rayDir) {
-        Vector3f dirfrac = new Vector3f();
-        dirfrac.x = 1.0f / rayDir.x;
-        dirfrac.y = 1.0f / rayDir.y;
-        dirfrac.z = 1.0f / rayDir.z;
+        Vector3f dirfrac = new Vector3f(1.0f / rayDir.x, 1.0f / rayDir.y, 1.0f / rayDir.z);
 
         float t1 = (min.x - rayStart.x) * dirfrac.x;
         float t2 = (max.x - rayStart.x) * dirfrac.x;
@@ -66,17 +69,16 @@ public class SolidBox {
         float tmin = Math.max(Math.max(Math.min(t1, t2), Math.min(t3, t4)), Math.min(t5, t6));
         float tmax = Math.min(Math.min(Math.max(t1, t2), Math.max(t3, t4)), Math.max(t5, t6));
 
-        // if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
-        if (tmax < 0) {
-            return new RaycastInfo(Float.POSITIVE_INFINITY, false);
+        if (tmax < 0 || tmin > tmax) {
+            return new RaycastInfo(Float.POSITIVE_INFINITY, false, new Vector3f(0, 0, 0));  // No intersection
         }
 
-        // if tmin > tmax, ray doesn't intersect AABB
-        if (tmin > tmax) {
-            return new RaycastInfo(Float.POSITIVE_INFINITY, false);
-        }
+        Vector3f normal = new Vector3f(0, 0, 0);
+        if (tmin == t1 || tmin == t2) normal.x = rayDir.x < 0 ? 1 : -1;
+        else if (tmin == t3 || tmin == t4) normal.y = rayDir.y < 0 ? 1 : -1;
+        else if (tmin == t5 || tmin == t6) normal.z = rayDir.z < 0 ? 1 : -1;
 
-        return new RaycastInfo(tmin, true);
+        return new RaycastInfo(tmin, true, normal);
     }
 
 

@@ -24,11 +24,8 @@ class TerrainSampleRegion {
     }
 
     public Vector2f closestPointTowards(Vector2f target) {
-        System.out.println("target:" + target.x + " " + target.y + " reg: " + position.x + " " + position.y + " " + width + " " + height);
-
         if (target.x >= position.x && target.x <= (position.x + width) &&
                 target.y >= position.y && target.y <= (position.y + height)) {
-            System.out.println("bacc");
             return target;
         }
 

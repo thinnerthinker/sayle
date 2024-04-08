@@ -1,17 +1,18 @@
 package com.yallo.sayle.core;
 
+import org.joml.Vector3f;
+
 import java.util.Objects;
 
 public class RaycastInfo {
     public float distance;
+    public Vector3f normal;
     public boolean solid;
 
-    public RaycastInfo(float distance, boolean solid) {
+    public RaycastInfo(float distance, boolean solid, Vector3f normal) {
         this.distance = distance;
         this.solid = solid;
-    }
-
-    public RaycastInfo() {
+        this.normal = normal;
     }
 
     public RaycastInfo min(RaycastInfo other) {

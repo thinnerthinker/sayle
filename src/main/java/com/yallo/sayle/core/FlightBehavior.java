@@ -23,7 +23,7 @@ public class FlightBehavior {
     }
 
     public Vector2f desiredInput(CharacterState state, RaycastableTerrain terrain, RegionEvaluatorFunction eval) {
-        float viewportHalfWidth = (float) Math.tan(fovX), viewportHalfHeight = (float) Math.tan(fovY);
+        float viewportHalfWidth = (float) Math.tan(fovX / 2), viewportHalfHeight = (float) Math.tan(fovY / 2);
         float aspectRatio = viewportHalfWidth / viewportHalfHeight;
 
         int raysX = (int) (aspectRatio * terrainSampleResolution), raysY = terrainSampleResolution;
@@ -38,31 +38,29 @@ public class FlightBehavior {
                         .add(new Vector3f(state.forward))
                         .normalize();
 
-                //System.out.println(state.position.z);
+                RaycastInfo hit = terrain.raycast(new Vector3f(state.position), dir);
 
-                depthField[y][x] = terrain.raycast(new Vector3f(state.position), dir);
+                if (!Float.isInfinite(hit.distance)) {
+                    double wallAngle = Math.acos(dir.dot(hit.normal));
+                    hit.distance = (float) (hit.distance * Math.cos(wallAngle));
+                }
+
+                depthField[y][x] = hit;
             }
         }
 
-        for (int i = 0; i < raysY; i++) {
-            for (int j = 0; j < raysX; j++) {
-                System.out.print(depthField[i][j].distance + " ");
+        /*for (int y = 0; y < raysY; y++) {
+            for (int x = 0; x < raysX; x++) {
+                System.out.print(String.format("%.2f ", depthField[y][x].distance));
             }
             System.out.println();
         }
-        System.out.println();
-
-        for (var r : getRectRegions(depthField)) {
-            System.out.println(r.position.x + " " + r.position.y + " " + r.width + " " + r.height);
-        }
-        System.out.println();
+        System.out.println();*/
 
         var bestEval = getRectRegions(depthField).stream().map(eval::calculate).min(Comparator.comparing(e -> e.cost)).get();
         //System.out.println(bestHole.position.x + " " + bestHole.position.y + " " + bestHole.width + " " + bestHole.height);
 
         Vector2f target = bestEval.suggestedPoint;
-        System.out.println(target.x + " " + target.y + " " + bestEval.cost);
-
         return new Vector2f(2 * (target.x / raysX - 0.5f), 2 * (target.y / raysY - 0.5f));
     }
 

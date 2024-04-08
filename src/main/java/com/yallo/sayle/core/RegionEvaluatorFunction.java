@@ -20,18 +20,18 @@ public interface RegionEvaluatorFunction {
 
         Vector2f viewportCenter = new Vector2f(sampleWidth / 2f, sampleHeight / 2f);
 
-        final float safeRange = 0.5f;
+        final float safeRange = 0.5f * 0; // TODO: multiply by smt
 
         return region -> {
             Vector2f p = region.closestPointTowards(viewportCenter);
-            float d = viewportCenter.distance(p);
+            float d = viewportCenter.distance(p) / maxDistance;
             if (!region.info.solid) {
                 d -= 10;
             }
 
             p.add(region.getCenter().sub(viewportCenter).mul(safeRange));
 
-            final float weight = 0.2f;
+            final float weight = 0.0f;
 
             return new RegionEvaluation(weight * d + 1 / region.info.distance, p);
         };
