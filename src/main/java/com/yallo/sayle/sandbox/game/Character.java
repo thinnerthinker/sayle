@@ -51,7 +51,7 @@ public class Character {
     }
 
     public void draw(Camera camera) {
-        Shader shader = Resources.getTerrainShader();
+        Shader shader = Resources.getCharacterShader();
         shader.bind();
 
         shader.setUniform("viewProj", camera.getViewProjection().mul(model));

@@ -29,12 +29,41 @@ public class SolidBox {
 
         // Define normals for each face
         float[] normals = {
-                0, 0, -1, // Front face
-                0, 0, 1,  // Back face
-                -1, 0, 0, // Left face
-                1, 0, 0,  // Right face
-                0, -1, 0, // Bottom face
-                0, 1, 0   // Top face
+                // Front face (min.z)
+                0.0f, 0.0f, -1.0f,
+                0.0f, 0.0f, -1.0f,
+                0.0f, 0.0f, -1.0f,
+                0.0f, 0.0f, -1.0f,
+
+                // Back face (max.z)
+                0.0f, 0.0f, 1.0f,
+                0.0f, 0.0f, 1.0f,
+                0.0f, 0.0f, 1.0f,
+                0.0f, 0.0f, 1.0f,
+
+                // Left face (min.x)
+                -1.0f, 0.0f, 0.0f,
+                -1.0f, 0.0f, 0.0f,
+                -1.0f, 0.0f, 0.0f,
+                -1.0f, 0.0f, 0.0f,
+
+                // Right face (max.x)
+                1.0f, 0.0f, 0.0f,
+                1.0f, 0.0f, 0.0f,
+                1.0f, 0.0f, 0.0f,
+                1.0f, 0.0f, 0.0f,
+
+                // Bottom face (min.y)
+                0.0f, -1.0f, 0.0f,
+                0.0f, -1.0f, 0.0f,
+                0.0f, -1.0f, 0.0f,
+                0.0f, -1.0f, 0.0f,
+
+                // Top face (max.y)
+                0.0f, 1.0f, 0.0f,
+                0.0f, 1.0f, 0.0f,
+                0.0f, 1.0f, 0.0f,
+                0.0f, 1.0f, 0.0f
         };
 
         int[] indices = {
@@ -87,6 +116,7 @@ public class SolidBox {
         shader.bind();
 
         shader.setUniform("viewProj", camera.getViewProjection());
+        shader.setUniform("cameraPos", camera.getPivotPosition());
         //shader.setUniform("viewProj", new Matrix4f());
         mesh.draw();
 
