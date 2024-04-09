@@ -35,7 +35,7 @@ public class FlightTestGame extends Game {
 
         course = new ObstacleCourse(obstacles);
 
-        flight = new FlightBehavior(sampleSize,20f, fovX, fovY);
+        flight = new FlightBehavior(sampleSize,0.5f, fovX, fovY);
         costFunction = RegionEvaluatorFunction.safest(fovX, fovY, sampleSize);
     }
 
@@ -52,13 +52,13 @@ public class FlightTestGame extends Game {
         obstacles.add(new SolidBox(new Vector3f(-borderSize, borderSize, -30), new Vector3f(borderSize, borderSize + 1, -100))); */
 
         for (float z = -30; z >= -300; z -= 30) {
-            float centerX = random.nextFloat() * holeDeviation - holeDeviation / 2;
-            float centerY = random.nextFloat() * holeDeviation - holeDeviation / 2;
+            float holeX = random.nextFloat() * holeDeviation - holeDeviation / 2;
+            float holeY = random.nextFloat() * holeDeviation - holeDeviation / 2;
 
-            obstacles.add(new SolidBox(new Vector3f(-borderSize, -borderSize, z), new Vector3f(centerX, borderSize, z + 1)));
-            obstacles.add(new SolidBox(new Vector3f(centerX + holeSize, -borderSize, z), new Vector3f(borderSize, borderSize, z + 1)));
-            obstacles.add(new SolidBox(new Vector3f(-borderSize, -borderSize, z), new Vector3f(borderSize, centerY, z + 1)));
-            obstacles.add(new SolidBox(new Vector3f(-borderSize, centerY + holeSize, z), new Vector3f(borderSize, borderSize, z + 1)));
+            obstacles.add(new SolidBox(new Vector3f(-borderSize, -borderSize, z), new Vector3f(holeX, borderSize, z + 1)));
+            obstacles.add(new SolidBox(new Vector3f(holeX + holeSize, -borderSize, z), new Vector3f(borderSize, borderSize, z + 1)));
+            obstacles.add(new SolidBox(new Vector3f(holeX, -borderSize, z), new Vector3f(holeX + holeSize, holeY, z + 1)));
+            obstacles.add(new SolidBox(new Vector3f(holeX, holeY + holeSize, z), new Vector3f(holeX + holeSize, borderSize, z + 1)));
         }
 
         return obstacles;
@@ -71,18 +71,19 @@ public class FlightTestGame extends Game {
 
     @Override
     public void update(double dt) {
-        if (Input.isKeyDown(GLFW_KEY_SPACE)) {
-            character.pushInput(flight.desiredInput(character.state.clone(), course, costFunction), (float) dt);
-            character.state.position.add(new Vector3f(character.state.forward).mul(character.state.velocity * (float) dt));
-            /*mouseCaptured = !mouseCaptured;
+        if (Input.isKeyPressed(GLFW_KEY_SPACE)) {
+
+            mouseCaptured = !mouseCaptured;
 
             if (mouseCaptured) {
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             } else {
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            }*/
+            }
         }
 
+        character.pushInput(flight.desiredInput(character.state.clone(), course, costFunction), (float) dt);
+        character.state.position.add(new Vector3f(character.state.forward).mul(character.state.velocity * (float) dt));
 
         character.updateTransform();
 

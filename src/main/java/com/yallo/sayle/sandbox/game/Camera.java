@@ -75,6 +75,13 @@ public class Camera {
         view = new Matrix4f().lookAt(position, finalTarget, rotatedUp);
     }
 
+    public Vector3f getPosition() {
+        Matrix4f rotation = new Matrix4f().rotationYXZ(angleX, angleY, 0);
+
+        Vector3f posOnSphere = rotation.transformDirection(new Vector3f(0, 0, 1)).mul(distance);
+        return pivotPosition.add(posOnSphere);
+    }
+
     public Vector3f unproject(Vector2f screen) {
         return getViewProjection().invert().transformDirection(new Vector3f(screen, 2*nearPlane)).normalize();
     }

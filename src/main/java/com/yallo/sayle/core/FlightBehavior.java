@@ -60,8 +60,8 @@ public class FlightBehavior {
         var bestEval = getRectRegions(depthField).stream().map(eval::calculate).min(Comparator.comparing(e -> e.cost)).get();
         //System.out.println(bestHole.position.x + " " + bestHole.position.y + " " + bestHole.width + " " + bestHole.height);
 
-        Vector2f target = bestEval.suggestedPoint;
-        return new Vector2f(2 * (target.x / raysX - 0.5f), 2 * (target.y / raysY - 0.5f));
+        //Vector2f target = bestEval.suggestedPoint;
+        return bestEval.suggestedDirection; //new Vector2f(2 * (target.x / raysX - 0.5f), 2 * (target.y / raysY - 0.5f));
     }
 
     List<TerrainSampleRegion> getRectRegions(RaycastInfo[][] sample) {
