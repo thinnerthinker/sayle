@@ -22,17 +22,16 @@ public class FlightBehavior {
         this.fovY = fovY;
     }
 
-    public Vector2f desiredInput(CharacterState state, RaycastableTerrain terrain, RegionEvaluatorFunction eval) {
+    public RaycastInfo[][] getDepthField(CharacterState state, RaycastableTerrain terrain) {
         float viewportHalfWidth = (float) Math.tan(fovX / 2), viewportHalfHeight = (float) Math.tan(fovY / 2);
         float aspectRatio = viewportHalfWidth / viewportHalfHeight;
-
         int raysX = (int) (aspectRatio * terrainSampleResolution), raysY = terrainSampleResolution;
-        RaycastInfo[][] depthField = new RaycastInfo[raysY][raysX];
 
+        RaycastInfo[][] depthField = new RaycastInfo[raysY][raysX];
 
         for (int y = 0; y < raysY; y++) {
             for (int x = 0; x < raysX; x++) {
-                Vector2f rayTilt = new Vector2f(2 * ((x + 0.5f) / raysX - 0.5f), 2 * ((y + 0.5f) / raysY - 0.5f));
+                Vector2f rayTilt = new Vector2f(2 * ((x + 0.5f) / raysX - 0.5f), -2 * ((y + 0.5f) / raysY - 0.5f));
                 Vector3f dir = new Vector3f(state.right).mul(rayTilt.x * viewportHalfWidth)
                         .add(new Vector3f(state.up).mul(-rayTilt.y * viewportHalfHeight))
                         .add(new Vector3f(state.forward))
@@ -41,30 +40,163 @@ public class FlightBehavior {
                 RaycastInfo hit = terrain.raycast(new Vector3f(state.position), dir);
 
                 if (!Float.isInfinite(hit.distance)) {
-                    double wallAngle = Math.acos(dir.dot(hit.normal));
-                    hit.distance = (float) (hit.distance * Math.cos(wallAngle));
+                    double deviation = Math.acos(dir.dot(state.forward));
+                    //if (Math.abs(deviation) < Math.PI / 4) {
+                    hit.distance = (float) (hit.distance * Math.abs(Math.cos(deviation)));
+                    //}
                 }
 
                 depthField[y][x] = hit;
             }
         }
 
-        /*for (int y = 0; y < raysY; y++) {
-            for (int x = 0; x < raysX; x++) {
-                System.out.print(String.format("%.2f ", depthField[y][x].distance));
-            }
-            System.out.println();
-        }
-        System.out.println();*/
+        return depthField;
+    }
 
-        var bestEval = getRectRegions(depthField).stream().map(eval::calculate).min(Comparator.comparing(e -> e.cost)).get();
+    public Vector2f desiredInput(RaycastInfo[][] depthField, RegionEvaluatorFunction eval) {
+        float viewportHalfWidth = (float) Math.tan(fovX / 2), viewportHalfHeight = (float) Math.tan(fovY / 2);
+        float aspectRatio = viewportHalfWidth / viewportHalfHeight;
+        int raysX = (int) (aspectRatio * terrainSampleResolution), raysY = terrainSampleResolution;
+        //var covered = coverDangerousEdges(depthField, 2 * viewportHalfWidth, 2 * viewportHalfHeight);
+
+        //var bestEval = getRegions(covered).stream().map(eval::calculate).min(Comparator.comparing(e -> e.cost)).get();
         //System.out.println(bestHole.position.x + " " + bestHole.position.y + " " + bestHole.width + " " + bestHole.height);
 
         //Vector2f target = bestEval.suggestedPoint;
-        return bestEval.suggestedDirection; //new Vector2f(2 * (target.x / raysX - 0.5f), 2 * (target.y / raysY - 0.5f));
+        return bestRegion(depthField, 2 * viewportHalfWidth, 2 * viewportHalfHeight).getCenter().sub(new Vector2f(raysX / 2f, raysY / 2f)).normalize(); //new Vector2f(2 * (target.x / raysX - 0.5f), 2 * (target.y / raysY - 0.5f));
     }
 
-    List<TerrainSampleRegion> getRectRegions(RaycastInfo[][] sample) {
+    TerrainSampleRegion bestRegion(RaycastInfo[][] sample, float viewportWidth, float viewportHeight) {
+        final float safeSize = 0.2f;
+        int raysY = sample.length, raysX = sample[0].length;
+
+        int regionSizeX = (int) Math.ceil(safeSize * raysX / viewportWidth);
+        int regionSizeY = (int) Math.ceil(safeSize * raysY / viewportHeight);
+
+        System.out.println(regionSizeX);
+
+        float globalMax = 0;
+        TerrainSampleRegion bestRegion = null;
+
+        for (int xs = 0; xs < raysX - regionSizeX; xs++) {
+            for (int ys = 0; ys < raysY - regionSizeY; ys++) {
+                float min = Float.POSITIVE_INFINITY;
+                for (int x = 0; x < regionSizeX; x++) {
+                    for (int y = 0; y < regionSizeY; y++) {
+                        min = Math.min(min, sample[y + ys][x + xs].distance);
+                    }
+                }
+
+                if (globalMax < min) {
+                    globalMax = min;
+                    bestRegion = new TerrainSampleRegion(new Vector2i(xs, ys), regionSizeX, regionSizeY);
+                }
+            }
+        }
+
+        return bestRegion;
+    }
+
+    RaycastInfo[][] coverDangerousEdges(RaycastInfo[][] sample, float viewportWidth, float viewportHeight) {
+        final float safeDistance = 3f, distTolerance = 0.01f;
+
+        int raysY = sample.length, raysX = sample[0].length;
+        RaycastInfo[][] covered = new RaycastInfo[raysY][raysX];
+
+        for (int y = 0; y < raysY; y++) {
+            for (int x = 0; x < raysX; x++) {
+                covered[y][x] = new RaycastInfo(sample[y][x]);
+            }
+        }
+
+        int coverDistance = 0;
+        float coverAmount = 0;
+
+        for (int y = 0; y < raysY; y++) {
+            for (int x = 1; x < raysX; x++) {
+                float delta = distanceDelta(sample[y][x].distance, sample[y][x - 1].distance, distTolerance);
+
+                // closer walls cover the edges of farther walls
+                if (delta < 0) {
+                    coverDistance = (int) Math.ceil(raysX * safeDistance / sample[y][x - 1].distance * viewportWidth);
+                    coverAmount = sample[y][x - 1].distance;
+                } else if (delta > 0) {
+                    coverDistance = 0;
+                }
+
+                if (coverDistance > 0) {
+                    coverDistance--;
+                    covered[y][x].distance = coverAmount;
+                }
+            }
+        }
+
+        for (int y = 0; y < raysY; y++) {
+            for (int x = raysX - 1; x >= 1; x--) {
+                float delta = distanceDelta(sample[y][x - 1].distance, sample[y][x].distance, distTolerance);
+
+                if (delta < 0) {
+                    coverDistance = (int) Math.ceil(raysX * safeDistance / sample[y][x].distance * viewportWidth);
+                    coverAmount = sample[y][x].distance;
+                } else if (delta > 0) {
+                    coverDistance = 0;
+                }
+
+                if (coverDistance > 0) {
+                    coverDistance--;
+                    covered[y][x].distance = Math.max(coverAmount, covered[y][x].distance);
+                }
+            }
+        }
+
+        for (int x = 0; x < raysX; x++) {
+            for (int y = 1; y < raysY; y++) {
+                float delta = distanceDelta(sample[y][x].distance, sample[y - 1][x].distance, distTolerance);
+
+                if (delta < 0) {
+                    coverDistance = (int) Math.ceil(raysX * safeDistance / sample[y - 1][x].distance * viewportWidth);
+                    coverAmount = sample[y - 1][x].distance;
+                } else if (delta > 0) {
+                    coverDistance = 0;
+                }
+
+                if (coverDistance > 0) {
+                    coverDistance--;
+                    covered[y][x].distance = Math.max(coverAmount, covered[y][x].distance);
+                }
+            }
+        }
+
+        for (int x = 0; x < raysX; x++) {
+            for (int y = raysY - 1; y >= 1; y--) {
+                float delta = distanceDelta(sample[y - 1][x].distance, sample[y][x].distance, distTolerance);
+
+                if (delta < 0) {
+                    coverDistance = (int) Math.ceil(raysX * safeDistance / sample[y][x].distance * viewportWidth);
+                    coverAmount = sample[y][x].distance;
+                } else if (delta > 0) {
+                    coverDistance = 0;
+                }
+
+                if (coverDistance > 0) {
+                    coverDistance--;
+                    covered[y][x].distance = Math.max(coverAmount, covered[y][x].distance);
+                }
+            }
+        }
+
+        return covered;
+    }
+
+    float distanceDelta(float current, float previous, float tolerance) {
+        float d = current - previous;
+        if (Math.abs(d) <= tolerance) {
+            return 0;
+        }
+        return Math.signum(d);
+    }
+
+    /*List<TerrainSampleRegion> getRegions(RaycastInfo[][] sample) {
         List<TerrainSampleRegion> regions = new ArrayList<>();
         HashSet<Vector2i> visited = new HashSet<>();
 
@@ -80,7 +212,7 @@ public class FlightBehavior {
 
                 int width;
                 for (width = 1; width < maxWidth; width++) {
-                    if (!current.similar(sample[y][x + width], maxDepthDelta)) {
+                    if (visited.contains(new Vector2i(x + width, y)) || !current.similar(sample[y][x + width], maxDepthDelta)) {
                         break;
                     }
                 }
@@ -89,7 +221,7 @@ public class FlightBehavior {
                 outerLoop:
                 for (height = 1; height < maxHeight; height++) {
                     for (int wx = 0; wx < width; wx++) {
-                        if (!current.similar(sample[y + height][x + wx], maxDepthDelta)) {
+                        if (visited.contains(new Vector2i(x + wx, y + height)) || !current.similar(sample[y + height][x + wx], maxDepthDelta)) {
                             break outerLoop;
                         }
                     }
@@ -107,6 +239,6 @@ public class FlightBehavior {
         }
 
         return regions;
-    }
+    }*/
 
 }

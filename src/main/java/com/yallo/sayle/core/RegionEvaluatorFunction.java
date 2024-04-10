@@ -21,9 +21,9 @@ public interface RegionEvaluatorFunction {
 
         final float safeDistanceFromBorders = 1f; // TODO: multiply by smt
 
-        // TODO: this keeps turning until it sees clear then stops, thats why it bashes its head
         return region -> {
-            Vector2f p = region.closestPointTowards(viewportCenter);
+            return new RegionEvaluation(0, new Vector2f(), new Vector2f());
+            /*Vector2f p = region.closestPointTowards(viewportCenter);
             float d = viewportCenter.distance(p) / maxDistance;
             if (!region.info.solid) {
                 d -= 10;
@@ -39,7 +39,7 @@ public interface RegionEvaluatorFunction {
 
             final float weight = 0.0f;
 
-            return new RegionEvaluation(weight * d + 1 / region.info.distance, region.getCenter(), dir);
+            return new RegionEvaluation(weight * d + 1 / region.info.distance, region.getCenter(), dir);*/
         };
     }
 }

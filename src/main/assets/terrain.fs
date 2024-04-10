@@ -1,8 +1,8 @@
 #version 330
 
 uniform vec3 cameraPos;  // Camera position in world space
-float fadeStart = 80.0; // Distance at which fading starts
-float fadeEnd = 120.0;   // Distance at which objects are fully faded
+float fadeStart = 50.0; // Distance at which fading starts
+float fadeEnd = 100.0;   // Distance at which objects are fully faded
 
 in vec3 fPos;     // Fragment position in world space
 in vec3 fNormal;  // Normal at the fragment

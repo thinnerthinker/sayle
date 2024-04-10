@@ -88,12 +88,19 @@ public class SolidBox {
     public RaycastInfo raycast(Vector3f rayStart, Vector3f rayDir) {
         Vector3f dirfrac = new Vector3f(1.0f / rayDir.x, 1.0f / rayDir.y, 1.0f / rayDir.z);
 
-        float t1 = (min.x - rayStart.x) * dirfrac.x;
-        float t2 = (max.x - rayStart.x) * dirfrac.x;
-        float t3 = (min.y - rayStart.y) * dirfrac.y;
-        float t4 = (max.y - rayStart.y) * dirfrac.y;
-        float t5 = (min.z - rayStart.z) * dirfrac.z;
-        float t6 = (max.z - rayStart.z) * dirfrac.z;
+        float d1 = min.x - rayStart.x;
+        float d2 = max.x - rayStart.x;
+        float d3 = min.y - rayStart.y;
+        float d4 = max.y - rayStart.y;
+        float d5 = min.z - rayStart.z;
+        float d6 = max.z - rayStart.z;
+
+        float t1 = d1 * dirfrac.x;
+        float t2 = d2 * dirfrac.x;
+        float t3 = d3 * dirfrac.y;
+        float t4 = d4 * dirfrac.y;
+        float t5 = d5 * dirfrac.z;
+        float t6 = d6 * dirfrac.z;
 
         float tmin = Math.max(Math.max(Math.min(t1, t2), Math.min(t3, t4)), Math.min(t5, t6));
         float tmax = Math.min(Math.min(Math.max(t1, t2), Math.max(t3, t4)), Math.max(t5, t6));
@@ -102,10 +109,23 @@ public class SolidBox {
             return new RaycastInfo(Float.POSITIVE_INFINITY, false, new Vector3f(0, 0, 0));  // No intersection
         }
 
+        int signX = rayDir.x < 0 ? -1 : 1, signY = rayDir.y < 0 ? 1 : -1, signZ = rayDir.z < 0 ? 1 : -1;
         Vector3f normal = new Vector3f(0, 0, 0);
-        if (tmin == t1 || tmin == t2) normal.x = rayDir.x < 0 ? 1 : -1;
-        else if (tmin == t3 || tmin == t4) normal.y = rayDir.y < 0 ? 1 : -1;
-        else if (tmin == t5 || tmin == t6) normal.z = rayDir.z < 0 ? 1 : -1;
+
+        if (tmin == t1 || tmin == t2) normal.x = signX ;
+        else if (tmin == t3 || tmin == t4) normal.y = signY;
+        else normal.z = signZ;
+
+        float steepnessX = rayDir.x * signX;
+        float steepnessY = rayDir.y * signY;
+        float steepnessZ = rayDir.z * signZ;
+
+        float maxSteepness = Math.max(steepnessX, Math.max(steepnessY, steepnessZ));
+
+        float straightDistance;
+        if (maxSteepness == steepnessX) straightDistance = Math.min(Math.abs(d1), Math.abs(d2));
+        else if (maxSteepness == steepnessY) straightDistance = Math.min(Math.abs(d3), Math.abs(d4));
+        else straightDistance = Math.min(Math.abs(d5), Math.abs(d6));
 
         return new RaycastInfo(tmin, true, normal);
     }

@@ -15,7 +15,16 @@ public class RaycastInfo {
         this.normal = normal;
     }
 
+    public RaycastInfo(RaycastInfo that) {
+        this.distance = that.distance;
+        this.solid = that.solid;
+        this.normal = that.normal;
+    }
+
     public RaycastInfo min(RaycastInfo other) {
+        return distance < other.distance ? this : other;
+    }
+    public RaycastInfo max(RaycastInfo other) {
         return distance < other.distance ? this : other;
     }
 

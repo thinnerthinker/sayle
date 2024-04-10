@@ -14,10 +14,11 @@ import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryStack.stackPush;
+import static org.lwjgl.system.MemoryUtil.NULL;
 
 public abstract class Game {
-    // The window handle
-    protected long window;
+    // The flightWindow handle
+    protected long flightWindow, depthFieldWindow;
 
     public void run() {
         init();
@@ -25,9 +26,12 @@ public abstract class Game {
 
         cleanup();
 
-        // Free the window callbacks and destroy the window
-        glfwFreeCallbacks(window);
-        glfwDestroyWindow(window);
+        // Free the flightWindow callbacks and destroy the flightWindow
+        glfwFreeCallbacks(flightWindow);
+        glfwDestroyWindow(flightWindow);
+
+        glfwFreeCallbacks(depthFieldWindow);
+        glfwDestroyWindow(depthFieldWindow);
 
         // Terminate GLFW and free the error callback
         glfwTerminate();
@@ -37,6 +41,7 @@ public abstract class Game {
     public abstract void initialize();
     public abstract void update(double dt);
     public abstract void draw();
+    public abstract void drawDepthField();
     public abstract void dispose();
 
     private void init() {
@@ -48,17 +53,46 @@ public abstract class Game {
         if ( !glfwInit() )
             throw new IllegalStateException("Unable to initialize GLFW");
 
-        // Configure GLFW
-        glfwDefaultWindowHints(); // optional, the current window hints are already the default
-        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE); // the window will stay hidden after creation
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE); // the window will be resizable
+        flightWindow = createWindow("Sayle Sandbox - Flight", NULL);
+        depthFieldWindow = createWindow("Sayle Sandbox - Depth Field", flightWindow);
 
-        // Create the window
-        Window.init(1280, 720, "Sayle Sandbox");
-        window = Window.getHandle();
+        // This line is critical for LWJGL's interoperation with GLFW's
+        // OpenGL context, or any context that is managed externally.
+        // LWJGL detects the context that is current in the current thread,
+        // creates the GLCapabilities instance and makes the OpenGL
+        // bindings available for use.
+        glfwMakeContextCurrent(flightWindow);
+        glfwSwapInterval(1);
+        GL.createCapabilities();
+
+        // Make the flightWindow visible
+        glfwShowWindow(flightWindow);
+        glfwShowWindow(depthFieldWindow);
+
+        glfwSetInputMode(flightWindow, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        Input.init(flightWindow);
+        Resources.init();
+        initialize();
+    }
+
+    private long createWindow(String title, long shared) {
+        // Configure GLFW
+        glfwDefaultWindowHints();
+        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
+        // Create the flightWindow
+        Window.init(1280, 720, title, shared);
+        long windowHandle = Window.getHandle();
 
         // Setup a key callback. It will be called every time a key is pressed, repeated or released.
-        glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
+        glfwSetKeyCallback(windowHandle, (window, key, scancode, action, mods) -> {
             if ( key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE )
                 glfwSetWindowShouldClose(window, true); // We will detect this in the rendering loop
         });
@@ -68,57 +102,30 @@ public abstract class Game {
             IntBuffer pWidth = stack.mallocInt(1); // int*
             IntBuffer pHeight = stack.mallocInt(1); // int*
 
-            // Get the window size passed to glfwCreateWindow
-            glfwGetWindowSize(window, pWidth, pHeight);
+            // Get the flightWindow size passed to glfwCreateWindow
+            glfwGetWindowSize(windowHandle, pWidth, pHeight);
 
             // Get the resolution of the primary monitor
             GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 
-            // Center the window
+            // Center the flightWindow
             glfwSetWindowPos(
-                    window,
+                    windowHandle,
                     (vidmode.width() - pWidth.get(0)) / 2,
                     (vidmode.height() - pHeight.get(0)) / 2
             );
-        } // the stack frame is popped automatically
+        }
 
-        // Make the OpenGL context current
-        glfwMakeContextCurrent(window);
-        // Enable v-sync
-        glfwSwapInterval(1);
-
-        // This line is critical for LWJGL's interoperation with GLFW's
-        // OpenGL context, or any context that is managed externally.
-        // LWJGL detects the context that is current in the current thread,
-        // creates the GLCapabilities instance and makes the OpenGL
-        // bindings available for use.
-        GL.createCapabilities();
-
-        // Make the window visible
-        glfwShowWindow(window);
-
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-
-        glEnable(GL_DEPTH_TEST);
-        glEnable(GL_CULL_FACE);
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-        Input.init(window);
-        Resources.init();
-        initialize();
+        return windowHandle;
     }
 
     private void loop() {
-        // Set the clear color
-        glClearColor(100.0f / 255, 149.0f / 255, 237.0f / 255, 1.0f);
-
         double currentTime;
         double prevTime = glfwGetTime();
 
         // Run the rendering loop until the user has attempted to close
-        // the window or has pressed the ESCAPE key.
-        while ( !glfwWindowShouldClose(window) ) {
+        // the flightWindow or has pressed the ESCAPE key.
+        while ( !glfwWindowShouldClose(flightWindow) ) {
             // Variable timesteps (vsync still limits it though)
             currentTime = glfwGetTime();
             double elapsed = currentTime - prevTime;
@@ -127,11 +134,21 @@ public abstract class Game {
             Input.update();
             update(elapsed);
 
+            glfwMakeContextCurrent(flightWindow);
+            glClearColor(100.0f / 255, 149.0f / 255, 237.0f / 255, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
             draw();
-            glfwSwapBuffers(window); // swap the color buffers
+            glfwSwapBuffers(flightWindow); // swap the color buffers
 
-            // Poll for window events. The key callback above will only be
+            glfwMakeContextCurrent(depthFieldWindow);
+            glClearColor(100.0f / 255, 149.0f / 255, 237.0f / 255, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
+            drawDepthField();
+            glfwSwapBuffers(depthFieldWindow); // swap the color buffers
+
+            glfwMakeContextCurrent(flightWindow);
+
+            // Poll for flightWindow events. The key callback above will only be
             // invoked during this call.
             glfwPollEvents();
         }
