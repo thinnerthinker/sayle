@@ -10,12 +10,10 @@ import java.util.List;
 import static org.lwjgl.opengl.GL11.*;
 
 public class ObstacleCourse implements RaycastableTerrain {
-    List<SolidBox> boxes;
-    ArrayList<Vector3f> debugLines;
+    public List<SolidBox> boxes;
 
     public ObstacleCourse(List<SolidBox> boxes) {
         this.boxes = boxes;
-        debugLines = new ArrayList<>();
     }
 
     @Override
@@ -30,18 +28,5 @@ public class ObstacleCourse implements RaycastableTerrain {
         for (var box : boxes) {
             box.draw(camera);
         }
-
-        for (int i = 0; i < debugLines.size(); i++) {
-            glBegin(GL_LINES);
-            glColor3f(1.0f, 0.0f, 0.0f);
-
-            glVertex3f(debugLines.get(i).x, debugLines.get(i).y, debugLines.get(i).z);
-            i++;
-            glVertex3f(debugLines.get(i).x, debugLines.get(i).y, debugLines.get(i).z);
-
-            glEnd();
-        }
-
-        debugLines.clear();
     }
 }

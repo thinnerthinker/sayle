@@ -19,11 +19,8 @@ public interface RegionEvaluatorFunction {
 
         Vector2f viewportCenter = new Vector2f(sampleWidth / 2f, sampleHeight / 2f);
 
-        final float safeDistanceFromBorders = 1f; // TODO: multiply by smt
-
         return region -> {
-            return new RegionEvaluation(0, new Vector2f(), new Vector2f());
-            /*Vector2f p = region.closestPointTowards(viewportCenter);
+            Vector2f p = region.closestPointTowards(viewportCenter);
             float d = viewportCenter.distance(p) / maxDistance;
             if (!region.info.solid) {
                 d -= 10;
@@ -35,11 +32,12 @@ public interface RegionEvaluatorFunction {
                 //p = region.getCenter().sub(viewportCenter);
 
                 dir = region.getCenter().sub(viewportCenter).normalize();
+                dir.y *= -1;
             }
 
             final float weight = 0.0f;
 
-            return new RegionEvaluation(weight * d + 1 / region.info.distance, region.getCenter(), dir);*/
+            return new RegionEvaluation(weight * d + 1 / region.info.distance, region.getCenter(), dir);
         };
     }
 }

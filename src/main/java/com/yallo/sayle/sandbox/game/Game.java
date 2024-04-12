@@ -141,7 +141,7 @@ public abstract class Game {
             glfwSwapBuffers(flightWindow); // swap the color buffers
 
             glfwMakeContextCurrent(depthFieldWindow);
-            glClearColor(100.0f / 255, 149.0f / 255, 237.0f / 255, 1.0f);
+            glClearColor(0f / 255, 0f / 255, 0f / 255, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
             drawDepthField();
             glfwSwapBuffers(depthFieldWindow); // swap the color buffers

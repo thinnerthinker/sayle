@@ -26,18 +26,19 @@ public class FlightTestGame extends Game {
 
     private RaycastInfo[][] lastSample;
 
+
+
     @Override
     public void initialize() {
         float fovX = 45f * (float)Math.PI / 180f, fovY = 45f * (float)Math.PI / 180f;
-        int sampleSize = 200;
+        int sampleSize = 20;
 
         camera = new Camera(0.25f, 0.15f, 10f);
         character = new Character(new CharacterState(new Vector3f(0f, 0f, 0f),
                 10f),
                 0.5f);
 
-        ArrayList<SolidBox> obstacles = createHoles();
-
+        ArrayList<SolidBox> obstacles = createHoles(-30, -30, 3);
         course = new ObstacleCourse(obstacles);
 
         flight = new FlightBehavior(sampleSize,0.5f, fovX, fovY);
@@ -46,19 +47,16 @@ public class FlightTestGame extends Game {
         glfwSetInputMode(flightWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     }
 
-    public ArrayList<SolidBox> createHoles() {
+    public ArrayList<SolidBox> createHoles(float startZ, float stepZ, float count) {
         ArrayList<SolidBox> obstacles = new ArrayList<>();
         Random random = new Random();
 
         float holeSize = 3, holeDeviation = 6;
-        float borderSize = 50; // The half-size of each SolidBox
+        float borderSize = 50;
 
-        /* obstacles.add(new SolidBox(new Vector3f(-borderSize - 1, -borderSize - 1, -30), new Vector3f(-borderSize, borderSize, -100)));
-        obstacles.add(new SolidBox(new Vector3f(borderSize, -borderSize - 1, -30), new Vector3f(borderSize + 1, borderSize, -100)));
-        obstacles.add(new SolidBox(new Vector3f(-borderSize - 1, -borderSize - 1, -30), new Vector3f(borderSize, -borderSize, -100)));
-        obstacles.add(new SolidBox(new Vector3f(-borderSize, borderSize, -30), new Vector3f(borderSize, borderSize + 1, -100))); */
+        for (int i = 0; i < count; i++) {
+            float z = startZ + i * stepZ;
 
-        for (float z = -30; z >= -300; z -= 30) {
             float holeX = random.nextFloat() * holeDeviation - holeDeviation / 2;
             float holeY = random.nextFloat() * holeDeviation - holeDeviation / 2;
 
@@ -79,23 +77,33 @@ public class FlightTestGame extends Game {
     @Override
     public void update(double dt) {
         if (Input.isKeyDown(GLFW_KEY_SPACE)) {
-            lastSample = flight.getDepthField(character.state.clone(), course);
-            Vector2f input = flight.desiredInput(lastSample, costFunction);
-            character.pushInput(input, (float) dt);
-            character.state.position.add(new Vector3f(character.state.forward).mul(character.state.velocity * (float) dt));
-            /*mouseCaptured = !mouseCaptured;
+            mouseCaptured = !mouseCaptured;
 
             if (mouseCaptured) {
                 glfwSetInputMode(flightWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             } else {
                 glfwSetInputMode(flightWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            }*/
+            }
         }
+
+        lastSample = flight.getDepthField(character.state.clone(), course);
+        Vector2f input = flight.desiredInput(lastSample, costFunction);
+        character.pushInput(input, (float) dt);
+        character.state.position.add(new Vector3f(character.state.forward).mul(character.state.velocity * (float) dt));
 
         character.updateTransform();
 
         camera.setPivotPosition(character.state.position);
         camera.update((float) dt);
+
+        if (character.state.position.z < course.boxes.get(0).min.z) {
+            course.boxes.remove(0);
+            course.boxes.remove(0);
+            course.boxes.remove(0);
+            course.boxes.remove(0);
+
+            course.boxes.addAll(createHoles(character.state.position.z - 3 * 30, -30, 1));
+        }
 
         //throw new RuntimeException();
     }
