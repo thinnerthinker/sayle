@@ -74,9 +74,43 @@ public class FlightBehavior {
     }
 
     RaycastInfo[][] coverDangerousEdges(RaycastInfo[][] sample, float viewportWidth, float viewportHeight) {
-        final float safeDistance = 1f, distTolerance = 0.01f;
+        final float safeDistance = 2f, distTolerance = 0.01f;
 
         int raysY = sample.length, raysX = sample[0].length;
+
+        float minDistance = Float.MAX_VALUE;
+        float maxDistance = Float.MIN_VALUE;
+        for (int y = 0; y < raysY; y++) {
+            for (int x = 0; x < raysX; x++) {
+                float dist = sample[y][x].distance;
+                if (dist < minDistance) minDistance = dist;
+                if (dist > maxDistance) maxDistance = dist;
+            }
+        }
+
+        if (Float.isInfinite(maxDistance)) {
+            maxDistance = 50;
+        }
+
+        final float buckets = 15;
+        float range = maxDistance - minDistance;
+        float interval = range / (buckets - 1);
+
+        for (int y = 0; y < raysY; y++) {
+            for (int x = 0; x < raysX; x++) {
+                float dist = sample[y][x].distance;
+                for (int i = 0; i < buckets - 1; i++) {
+                    if (dist <= minDistance + (i + 1) * interval) {
+                        sample[y][x].distance = minDistance + i * interval;
+                        break;
+                    }
+                }
+                if (dist > minDistance + (buckets - 1) * interval) {
+                    sample[y][x].distance = maxDistance;
+                }
+            }
+        }
+
         RaycastInfo[][] covered = this.quantizedDepthField;
         for (int y = 0; y < raysY; y++) {
             for (int x = 0; x < raysX; x++) {
