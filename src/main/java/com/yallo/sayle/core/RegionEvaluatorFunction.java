@@ -22,9 +22,9 @@ public interface RegionEvaluatorFunction {
         return region -> {
             Vector2f p = region.closestPointTowards(viewportCenter);
             float d = viewportCenter.distance(p) / maxDistance;
-            if (!region.info.solid) {
+            /*if (!region.info.solid) {
                 d -= 10;
-            }
+            }*/
 
             Vector2f dir = new Vector2f(0, 0);
             if (!p.equals(viewportCenter)) {
@@ -36,8 +36,13 @@ public interface RegionEvaluatorFunction {
             }
 
             final float weight = 0.0f;
+            float distFromAxisZ = 0;//(float) Math.pow(new Vector2f(region.info.position.x, region.info.position.y).lengthSquared(), 1.0);
 
-            return new RegionEvaluation(weight * d + 1 / region.info.distance, region.getCenter(), dir);
+            /*if (distFromAxisZ < Math.pow(10, 1.0)) {
+                distFromAxisZ = 0;
+            }*/
+
+            return new RegionEvaluation(weight * d + 1 / region.info.distance - distFromAxisZ, region.getCenter(), dir);
         };
     }
 }

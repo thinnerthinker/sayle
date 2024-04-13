@@ -18,7 +18,7 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 
 public abstract class Game {
     // The flightWindow handle
-    protected long flightWindow, depthFieldWindow;
+    protected long flightWindow, depthFieldWindow, quantizedDepthFieldWindow;
 
     public void run() {
         init();
@@ -33,6 +33,9 @@ public abstract class Game {
         glfwFreeCallbacks(depthFieldWindow);
         glfwDestroyWindow(depthFieldWindow);
 
+        glfwFreeCallbacks(quantizedDepthFieldWindow);
+        glfwDestroyWindow(quantizedDepthFieldWindow);
+
         // Terminate GLFW and free the error callback
         glfwTerminate();
         Objects.requireNonNull(glfwSetErrorCallback(null)).free();
@@ -40,6 +43,7 @@ public abstract class Game {
 
     public abstract void initialize();
     public abstract void update(double dt);
+    public abstract void updateQuantized(double dt);
     public abstract void draw();
     public abstract void drawDepthField();
     public abstract void dispose();
@@ -53,8 +57,9 @@ public abstract class Game {
         if ( !glfwInit() )
             throw new IllegalStateException("Unable to initialize GLFW");
 
-        flightWindow = createWindow("Sayle Sandbox - Flight", NULL);
-        depthFieldWindow = createWindow("Sayle Sandbox - Depth Field", flightWindow);
+        flightWindow = createWindow("Sayle Sandbox - Flight", 1280, 720, NULL);
+        depthFieldWindow = createWindow("Sayle Sandbox - Depth Field", 1280 / 2, 720 / 2, flightWindow);
+        quantizedDepthFieldWindow = createWindow("Sayle Sandbox - Quantized Depth Field", 1280 / 2, 720 / 2, flightWindow);
 
         // This line is critical for LWJGL's interoperation with GLFW's
         // OpenGL context, or any context that is managed externally.
@@ -68,6 +73,7 @@ public abstract class Game {
         // Make the flightWindow visible
         glfwShowWindow(flightWindow);
         glfwShowWindow(depthFieldWindow);
+        glfwShowWindow(quantizedDepthFieldWindow);
 
         glfwSetInputMode(flightWindow, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
@@ -81,14 +87,14 @@ public abstract class Game {
         initialize();
     }
 
-    private long createWindow(String title, long shared) {
+    private long createWindow(String title, int width, int height, long shared) {
         // Configure GLFW
         glfwDefaultWindowHints();
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
         // Create the flightWindow
-        Window.init(1280, 720, title, shared);
+        Window.init(width, height, title, shared);
         long windowHandle = Window.getHandle();
 
         // Setup a key callback. It will be called every time a key is pressed, repeated or released.
@@ -145,6 +151,13 @@ public abstract class Game {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
             drawDepthField();
             glfwSwapBuffers(depthFieldWindow); // swap the color buffers
+
+            glfwMakeContextCurrent(quantizedDepthFieldWindow);
+            glClearColor(0f / 255, 0f / 255, 0f / 255, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
+            updateQuantized(elapsed);
+            drawDepthField();
+            glfwSwapBuffers(quantizedDepthFieldWindow);
 
             glfwMakeContextCurrent(flightWindow);
 

@@ -6,18 +6,20 @@ import java.util.Objects;
 
 public class RaycastInfo {
     public float distance;
-    public Vector3f normal;
+    public Vector3f position, normal;
     public boolean solid;
 
-    public RaycastInfo(float distance, boolean solid, Vector3f normal) {
+    public RaycastInfo(float distance, boolean solid, Vector3f position, Vector3f normal) {
         this.distance = distance;
         this.solid = solid;
+        this.position = position;
         this.normal = normal;
     }
 
     public RaycastInfo(RaycastInfo that) {
         this.distance = that.distance;
         this.solid = that.solid;
+        this.position = that.position;
         this.normal = that.normal;
     }
 

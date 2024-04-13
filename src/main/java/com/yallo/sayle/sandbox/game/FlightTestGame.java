@@ -33,9 +33,9 @@ public class FlightTestGame extends Game {
         float fovX = 45f * (float)Math.PI / 180f, fovY = 45f * (float)Math.PI / 180f;
         int sampleSize = 20;
 
-        camera = new Camera(0.25f, 0.15f, 10f);
+        camera = new Camera(0.25f, 0.10f, 10f);
         character = new Character(new CharacterState(new Vector3f(0f, 0f, 0f),
-                10f),
+                20f),
                 0.5f);
 
         ArrayList<SolidBox> obstacles = createHoles(-30, -30, 3);
@@ -51,7 +51,7 @@ public class FlightTestGame extends Game {
         ArrayList<SolidBox> obstacles = new ArrayList<>();
         Random random = new Random();
 
-        float holeSize = 3, holeDeviation = 6;
+        float holeSize = 3, holeDeviation = 3, holeDepth = 15;
         float borderSize = 50;
 
         for (int i = 0; i < count; i++) {
@@ -60,10 +60,10 @@ public class FlightTestGame extends Game {
             float holeX = random.nextFloat() * holeDeviation - holeDeviation / 2;
             float holeY = random.nextFloat() * holeDeviation - holeDeviation / 2;
 
-            obstacles.add(new SolidBox(new Vector3f(-borderSize, -borderSize, z), new Vector3f(holeX, borderSize, z + 10)));
-            obstacles.add(new SolidBox(new Vector3f(holeX + holeSize, -borderSize, z), new Vector3f(borderSize, borderSize, z + 10)));
-            obstacles.add(new SolidBox(new Vector3f(holeX, -borderSize, z), new Vector3f(holeX + holeSize, holeY, z + 10)));
-            obstacles.add(new SolidBox(new Vector3f(holeX, holeY + holeSize, z), new Vector3f(holeX + holeSize, borderSize, z + 10)));
+            obstacles.add(new SolidBox(new Vector3f(-borderSize, -borderSize, z), new Vector3f(holeX, borderSize, z + holeDepth)));
+            obstacles.add(new SolidBox(new Vector3f(holeX + holeSize, -borderSize, z), new Vector3f(borderSize, borderSize, z + holeDepth)));
+            obstacles.add(new SolidBox(new Vector3f(holeX, -borderSize, z), new Vector3f(holeX + holeSize, holeY, z + holeDepth)));
+            obstacles.add(new SolidBox(new Vector3f(holeX, holeY + holeSize, z), new Vector3f(holeX + holeSize, borderSize, z + holeDepth)));
         }
 
         return obstacles;
@@ -87,11 +87,6 @@ public class FlightTestGame extends Game {
         }
 
         lastSample = flight.getDepthField(character.state.clone(), course);
-        Vector2f input = flight.desiredInput(lastSample, costFunction);
-        character.pushInput(input, (float) dt);
-        character.state.position.add(new Vector3f(character.state.forward).mul(character.state.velocity * (float) dt));
-
-        character.updateTransform();
 
         camera.setPivotPosition(character.state.position);
         camera.update((float) dt);
@@ -106,6 +101,17 @@ public class FlightTestGame extends Game {
         }
 
         //throw new RuntimeException();
+    }
+
+    @Override
+    public void updateQuantized(double dt) {
+        lastSample = flight.quantizedDepthField(lastSample);
+
+        Vector2f input = flight.desiredInput(lastSample, costFunction);
+        character.pushInput(input, (float) dt);
+        character.state.position.add(new Vector3f(character.state.forward).mul(character.state.velocity * (float) dt));
+
+        character.updateTransform();
     }
 
     @Override
@@ -161,7 +167,6 @@ public class FlightTestGame extends Game {
             }
         }
     }
-
 
     @Override
     public void dispose() {

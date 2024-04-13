@@ -21,7 +21,8 @@ public class ObstacleCourse implements RaycastableTerrain {
         return boxes.stream()
                 .map(box -> box.raycast(start, dir))
                 .reduce(RaycastInfo::min)
-                .orElse(new RaycastInfo(Float.POSITIVE_INFINITY, false, new Vector3f(0, 0, 1)));
+                .orElse(new RaycastInfo(Float.POSITIVE_INFINITY, false, new Vector3f(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
+                        new Vector3f(0, 0, 1)));
     }
 
     public void draw(Camera camera) {

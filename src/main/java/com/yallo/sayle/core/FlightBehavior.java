@@ -14,21 +14,27 @@ public class FlightBehavior {
     private float maxDepthDelta;
 
     private float fovX, fovY;
+    private float viewportHalfWidth, viewportHalfHeight, aspectRatio;
+    private int raysX, raysY;
+
+    RaycastInfo[][] depthField, quantizedDepthField;
 
     public FlightBehavior(int terrainSampleResolution, float maxDepthDelta, float fovX, float fovY) {
         this.terrainSampleResolution = terrainSampleResolution;
         this.maxDepthDelta = maxDepthDelta;
         this.fovX = fovX;
         this.fovY = fovY;
+        viewportHalfWidth = (float) Math.tan(fovX / 2);
+        viewportHalfHeight = (float) Math.tan(fovY / 2);
+        aspectRatio = viewportHalfWidth / viewportHalfHeight;
+        raysX = (int) (aspectRatio * terrainSampleResolution);
+        raysY = terrainSampleResolution;
+
+        depthField = new RaycastInfo[raysY][raysX];
+        quantizedDepthField = new RaycastInfo[raysY][raysX];
     }
 
     public RaycastInfo[][] getDepthField(CharacterState state, RaycastableTerrain terrain) {
-        float viewportHalfWidth = (float) Math.tan(fovX / 2), viewportHalfHeight = (float) Math.tan(fovY / 2);
-        float aspectRatio = viewportHalfWidth / viewportHalfHeight;
-        int raysX = (int) (aspectRatio * terrainSampleResolution), raysY = terrainSampleResolution;
-
-        RaycastInfo[][] depthField = new RaycastInfo[raysY][raysX];
-
         for (int y = 0; y < raysY; y++) {
             for (int x = 0; x < raysX; x++) {
                 Vector2f rayTilt = new Vector2f(2 * ((x + 0.5f) / raysX - 0.5f), -2 * ((y + 0.5f) / raysY - 0.5f));
@@ -50,6 +56,10 @@ public class FlightBehavior {
             }
         }
 
+        return depthField;
+    }
+
+    public RaycastInfo[][] quantizedDepthField(RaycastInfo[][] depthField) {
         return coverDangerousEdges(depthField, 2 * viewportHalfWidth, 2 * viewportHalfHeight);
     }
 
@@ -64,10 +74,10 @@ public class FlightBehavior {
     }
 
     RaycastInfo[][] coverDangerousEdges(RaycastInfo[][] sample, float viewportWidth, float viewportHeight) {
-        final float safeDistance = 2f, distTolerance = 0.01f;
+        final float safeDistance = 1f, distTolerance = 0.01f;
 
         int raysY = sample.length, raysX = sample[0].length;
-        RaycastInfo[][] covered = new RaycastInfo[raysY][raysX];
+        RaycastInfo[][] covered = this.quantizedDepthField;
         for (int y = 0; y < raysY; y++) {
             for (int x = 0; x < raysX; x++) {
                 covered[y][x] = new RaycastInfo(sample[y][x]);

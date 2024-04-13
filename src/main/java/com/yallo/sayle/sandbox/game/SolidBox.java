@@ -106,7 +106,8 @@ public class SolidBox {
         float tmax = Math.min(Math.min(Math.max(t1, t2), Math.max(t3, t4)), Math.max(t5, t6));
 
         if (tmax < 0 || tmin > tmax) {
-            return new RaycastInfo(Float.POSITIVE_INFINITY, false, new Vector3f(0, 0, 0));  // No intersection
+            return new RaycastInfo(Float.POSITIVE_INFINITY, false, new Vector3f(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
+                    new Vector3f(0, 0, 0));  // No intersection
         }
 
         int signX = rayDir.x < 0 ? -1 : 1, signY = rayDir.y < 0 ? 1 : -1, signZ = rayDir.z < 0 ? 1 : -1;
@@ -127,7 +128,7 @@ public class SolidBox {
         else if (maxSteepness == steepnessY) straightDistance = Math.min(Math.abs(d3), Math.abs(d4));
         else straightDistance = Math.min(Math.abs(d5), Math.abs(d6));
 
-        return new RaycastInfo(tmin, true, normal);
+        return new RaycastInfo(tmin, true, new Vector3f(rayStart).add(new Vector3f(rayDir).mul(tmin)), normal);
     }
 
 
