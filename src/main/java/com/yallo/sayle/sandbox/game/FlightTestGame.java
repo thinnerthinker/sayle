@@ -31,12 +31,12 @@ public class FlightTestGame extends Game {
     @Override
     public void initialize() {
         float fovX = 45f * (float)Math.PI / 180f, fovY = 45f * (float)Math.PI / 180f;
-        int sampleSize = 20;
+        int sampleSize = 40;
 
         camera = new Camera(0.25f, 0.10f, 10f);
         character = new Character(new CharacterState(new Vector3f(0f, 0f, 0f),
-                20f),
-                0.5f);
+                30f),
+                1f);
 
         ArrayList<SolidBox> obstacles = createHoles(-30, -30, 3);
         course = new ObstacleCourse(obstacles);
@@ -51,7 +51,7 @@ public class FlightTestGame extends Game {
         ArrayList<SolidBox> obstacles = new ArrayList<>();
         Random random = new Random();
 
-        float holeSize = 3, holeDeviation = 3, holeDepth = 15;
+        float holeSize = 5, holeDeviation = 8, holeDepth = 3;
         float borderSize = 50;
 
         for (int i = 0; i < count; i++) {
@@ -98,6 +98,15 @@ public class FlightTestGame extends Game {
             course.boxes.remove(0);
 
             course.boxes.addAll(createHoles(character.state.position.z - 3 * 30, -30, 1));
+        }
+
+        if (character.state.position.z < -2000) {
+            character.state.position.z += 2000;
+
+            for (var box : course.boxes) {
+                box.min.z += 2000;
+                box.max.z += 2000;
+            }
         }
 
         //throw new RuntimeException();
