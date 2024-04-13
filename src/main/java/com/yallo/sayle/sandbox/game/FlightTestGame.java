@@ -147,6 +147,10 @@ public class FlightTestGame extends Game {
             maxDistance = 1;
         }
 
+        if (Float.isInfinite(maxDistance)) {
+            maxDistance = 50;
+        }
+
         for (int y = 0; y < rows; y++) {
             for (int x = 0; x < cols; x++) {
                 float distance = lastSample[y][x].distance;
