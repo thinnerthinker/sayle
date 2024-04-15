@@ -32,8 +32,8 @@ public class Character {
     public void pushInput(Vector2f mouseMovement, float dt) {
         //System.out.println(mouseMovement.y);
 
-        angleX -= rotationSpeed * mouseMovement.x * dt;
-        angleY -= rotationSpeed * mouseMovement.y * dt;
+        angleX += rotationSpeed * mouseMovement.x * dt;
+        angleY += rotationSpeed * mouseMovement.y * dt;
 
         updateTransform();
     }

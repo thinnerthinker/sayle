@@ -3,18 +3,20 @@ package com.yallo.sayle.core;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 
-class TerrainSampleRegion {
+public class TerrainSampleRegion {
     public Vector2i position;
     public int width, height;
-    public RaycastInfo info;
+    public float distance;
+    public RaycastInfo original;
 
     private Vector2f center;
 
-    public TerrainSampleRegion(Vector2i position, int width, int height, RaycastInfo info) {
+    public TerrainSampleRegion(Vector2i position, int width, int height, float distance, RaycastInfo original) {
         this.position = position;
         this.width = width;
         this.height = height;
-        this.info = info;
+        this.distance = distance;
+        this.original = original;
 
         this.center = new Vector2f((position.x + width / 2f), (position.y + height / 2f));
     }

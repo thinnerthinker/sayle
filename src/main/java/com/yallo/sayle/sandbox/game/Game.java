@@ -18,7 +18,7 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 
 public abstract class Game {
     // The flightWindow handle
-    protected long flightWindow, depthFieldWindow, quantizedDepthFieldWindow;
+    protected long flightWindow, depthFieldWindow, quantizedDepthFieldWindow, coveredDepthFieldWindow, bestRegionWindow;
 
     public void run() {
         init();
@@ -36,6 +36,12 @@ public abstract class Game {
         glfwFreeCallbacks(quantizedDepthFieldWindow);
         glfwDestroyWindow(quantizedDepthFieldWindow);
 
+        glfwFreeCallbacks(coveredDepthFieldWindow);
+        glfwDestroyWindow(coveredDepthFieldWindow);
+
+        glfwFreeCallbacks(bestRegionWindow);
+        glfwDestroyWindow(bestRegionWindow);
+
         // Terminate GLFW and free the error callback
         glfwTerminate();
         Objects.requireNonNull(glfwSetErrorCallback(null)).free();
@@ -43,9 +49,11 @@ public abstract class Game {
 
     public abstract void initialize();
     public abstract void update(double dt);
-    public abstract void updateQuantized(double dt);
     public abstract void draw();
-    public abstract void drawDepthField();
+    public abstract void drawRawDepthField();
+    public abstract void drawQuantizedDepthField();
+    public abstract void drawCoveredDepthField();
+    public abstract void drawRegions();
     public abstract void dispose();
 
     private void init() {
@@ -57,9 +65,11 @@ public abstract class Game {
         if ( !glfwInit() )
             throw new IllegalStateException("Unable to initialize GLFW");
 
-        flightWindow = createWindow("Sayle Sandbox - Flight", 1280, 720, NULL);
-        depthFieldWindow = createWindow("Sayle Sandbox - Depth Field", 1280 / 2, 720 / 2, flightWindow);
-        quantizedDepthFieldWindow = createWindow("Sayle Sandbox - Quantized Depth Field", 1280 / 2, 720 / 2, flightWindow);
+        flightWindow = createWindow("Sayle Sandbox - Flight", 1280, 740, 0, 0, NULL);
+        depthFieldWindow = createWindow("Depth Field", 200, 200, 0, 800, flightWindow);
+        quantizedDepthFieldWindow = createWindow("Quantized Depth Field", 200, 200, 200, 800, flightWindow);
+        coveredDepthFieldWindow = createWindow("Covered Depth Field", 200, 200, 400, 800, flightWindow);
+        bestRegionWindow = createWindow("Best Region", 200, 200, 600, 800, flightWindow);
 
         // This line is critical for LWJGL's interoperation with GLFW's
         // OpenGL context, or any context that is managed externally.
@@ -74,6 +84,8 @@ public abstract class Game {
         glfwShowWindow(flightWindow);
         glfwShowWindow(depthFieldWindow);
         glfwShowWindow(quantizedDepthFieldWindow);
+        glfwShowWindow(coveredDepthFieldWindow);
+        glfwShowWindow(bestRegionWindow);
 
         glfwSetInputMode(flightWindow, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
@@ -87,7 +99,7 @@ public abstract class Game {
         initialize();
     }
 
-    private long createWindow(String title, int width, int height, long shared) {
+    private long createWindow(String title, int width, int height, int posX, int posY, long shared) {
         // Configure GLFW
         glfwDefaultWindowHints();
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
@@ -117,8 +129,9 @@ public abstract class Game {
             // Center the flightWindow
             glfwSetWindowPos(
                     windowHandle,
-                    (vidmode.width() - pWidth.get(0)) / 2,
-                    (vidmode.height() - pHeight.get(0)) / 2
+                    //(vidmode.width() - pWidth.get(0)) / 2,
+                    //(vidmode.height() - pHeight.get(0)) / 2
+                    posX, posY
             );
         }
 
@@ -149,15 +162,26 @@ public abstract class Game {
             glfwMakeContextCurrent(depthFieldWindow);
             glClearColor(0f / 255, 0f / 255, 0f / 255, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
-            drawDepthField();
+            drawRawDepthField();
             glfwSwapBuffers(depthFieldWindow); // swap the color buffers
 
             glfwMakeContextCurrent(quantizedDepthFieldWindow);
             glClearColor(0f / 255, 0f / 255, 0f / 255, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
-            updateQuantized(elapsed);
-            drawDepthField();
+            drawQuantizedDepthField();
             glfwSwapBuffers(quantizedDepthFieldWindow);
+
+            glfwMakeContextCurrent(coveredDepthFieldWindow);
+            glClearColor(0f / 255, 0f / 255, 0f / 255, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
+            drawCoveredDepthField();
+            glfwSwapBuffers(coveredDepthFieldWindow);
+
+            glfwMakeContextCurrent(bestRegionWindow);
+            glClearColor(0f / 255, 0f / 255, 0f / 255, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
+            drawRegions();
+            glfwSwapBuffers(bestRegionWindow);
 
             glfwMakeContextCurrent(flightWindow);
 
