@@ -2,7 +2,11 @@ package com.yallo.sayle.core;
 
 import org.joml.Vector2f;
 
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class LocalSayleServer implements SayleServer {
     public TerrainSample latestSample;
@@ -20,9 +24,21 @@ public class LocalSayleServer implements SayleServer {
     public Vector2f desiredInput(RaycastInfo[][] sample) {
         latestSample = new TerrainSample(sample, viewportWidth, viewportHeight);
 
-        var bestEval = latestSample.getRegions().stream().map(eval::calculate).min(Comparator.comparing(e -> e.cost)).get();
-        latestWinner = bestEval.region;
+        var evals = latestSample.getRegions().stream().map(eval::calculate).collect(Collectors.toList());
+        List<List<RegionEvaluation>> prioritizedEvals = new ArrayList<>();
 
-        return bestEval.suggestedDirection;
+        for (int i = 0; i < evals.get(0).cost.length; i++) {
+            final int index = i;
+            prioritizedEvals.add(evals.stream().sorted(Comparator.comparingDouble(a -> a.cost[index])).collect(Collectors.toList()));
+        }
+
+        var bestRegion = evals.stream()
+                .min(Comparator.comparingInt(
+                        eval -> IntStream.range(0, prioritizedEvals.size())
+                                .map(i -> prioritizedEvals.get(i).indexOf(eval))
+                                .sum())).get();
+
+        latestWinner = bestRegion.region;
+        return bestRegion.suggestedDirection;
     }
 }

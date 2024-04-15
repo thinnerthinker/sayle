@@ -45,7 +45,7 @@ public class FlightTestGame extends Game {
         ArrayList<SolidBox> obstacles = new ArrayList<>();
         Random random = new Random();
 
-        float holeSize = 5, holeDeviation = 5, holeDepth = 5;
+        float holeSize = 5, holeDeviation = 10, holeDepth = 5;
         float borderSize = 50;
 
         for (int i = 0; i < count; i++) {
