@@ -27,14 +27,14 @@ public class FlightTestGame extends Game {
         camera = new Camera(0.25f, 0.10f, 10f);
         character = new Character(new CharacterState(new Vector3f(0f, 0f, 0f),
                 20f),
-                0.25f);
+                1f);
 
         ArrayList<SolidBox> obstacles = createHoles(-30, -30, 3);
         course = new ObstacleCourse(obstacles);
 
 
-        server = new LocalSayleServer(Parameters.fovX, Parameters.fovX, RegionEvaluatorFunction.safest(Parameters.fovX, Parameters.fovX, Parameters.sampleSize));
-        flight = new SayleClient(Parameters.sampleSize, Parameters.fovX, Parameters.fovX, server);
+        server = new LocalSayleServer(Parameters.fovX, Parameters.fovY, RegionEvaluatorFunction.safest(Parameters.fovX, Parameters.fovY, Parameters.sampleSize));
+        flight = new SayleClient(Parameters.sampleSize, Parameters.fovX, Parameters.fovY, server);
 
         glfwSetInputMode(flightWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -45,7 +45,7 @@ public class FlightTestGame extends Game {
         ArrayList<SolidBox> obstacles = new ArrayList<>();
         Random random = new Random();
 
-        float holeSize = 5, holeDeviation = 10, holeDepth = 5;
+        float holeSize = 5, holeDeviation = 8, holeDepth = 5;
         float borderSize = 50;
 
         for (int i = 0; i < count; i++) {
@@ -70,23 +70,22 @@ public class FlightTestGame extends Game {
 
     @Override
     public void update(double dt) {
-        if (Input.isKeyDown(GLFW_KEY_SPACE)) {
-
-            Vector2f input = flight.desiredInput(character.state, course);
-
-            character.pushInput(input, (float) dt);
-            character.state.position.add(new Vector3f(character.state.forward).mul(character.state.velocity * (float) dt));
-
-            character.updateTransform();
-
-            /*mouseCaptured = !mouseCaptured;
+        if (Input.isKeyPressed(GLFW_KEY_SPACE)) {
+            mouseCaptured = !mouseCaptured;
 
             if (mouseCaptured) {
                 glfwSetInputMode(flightWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             } else {
                 glfwSetInputMode(flightWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            }*/
+            }
         }
+
+        Vector2f input = flight.desiredInput(character.state, course);
+
+        character.pushInput(input, (float) dt);
+        character.state.position.add(new Vector3f(character.state.forward).mul(character.state.velocity * (float) dt));
+
+        character.updateTransform();
 
         camera.setPivotPosition(character.state.position);
         camera.update((float) dt);
