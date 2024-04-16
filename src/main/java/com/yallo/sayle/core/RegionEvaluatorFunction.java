@@ -37,7 +37,7 @@ public interface RegionEvaluatorFunction {
 
             //return new RegionEvaluation(region, region.width * region.height, region.getCenter(), dir);
 
-            float[] cost = new float[] { 1 / region.distance /*, distFromAxisZ */ };
+            float[] cost = new float[] { 1 / region.distance /*, distFromAxisZ*/ };
 
             return new RegionEvaluation(region, cost, region.getCenter(), dir);
         };
