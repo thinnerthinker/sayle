@@ -33,9 +33,9 @@ public class LocalSayleServer implements SayleServer {
         }
 
         var bestRegion = evals.stream()
-                .min(Comparator.comparingInt(
+                .min(Comparator.comparingDouble(
                         eval -> IntStream.range(0, prioritizedEvals.size())
-                                .map(i -> prioritizedEvals.get(i).indexOf(eval))
+                                .mapToDouble(i -> prioritizedEvals.get(i).indexOf(eval) / (double)(1 << i))
                                 .sum())).get();
 
         latestWinner = bestRegion.region;
