@@ -1,6 +1,7 @@
 package com.yallo.sayle.core;
 
 import org.joml.Vector2f;
+import org.joml.Vector2i;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -12,7 +13,7 @@ public class LocalSayleServer implements SayleServer {
     public TerrainSample latestSample;
     private float viewportWidth, viewportHeight;
     private RegionEvaluatorFunction eval;
-    public TerrainSampleRegion latestWinner;
+    public Vector2i latestWinner;
 
     public LocalSayleServer(float fovX, float fovY, RegionEvaluatorFunction eval) {
         this.viewportWidth = 2 * (float) Math.tan(fovX / 2);
@@ -20,25 +21,37 @@ public class LocalSayleServer implements SayleServer {
         this.eval = eval;
     }
 
-    @Override
     public Vector2f desiredInput(RaycastInfo[][] sample) {
         latestSample = new TerrainSample(sample, viewportWidth, viewportHeight);
 
-        var evals = latestSample.getRegions().stream().map(eval::calculate).collect(Collectors.toList());
-        List<List<RegionEvaluation>> prioritizedEvals = new ArrayList<>();
+        int centerX = latestSample.width / 2;
+        int centerY = latestSample.height / 2;
 
-        for (int i = 0; i < evals.get(0).cost.length; i++) {
-            final int index = i;
-            prioritizedEvals.add(evals.stream().sorted(Comparator.comparingDouble(a -> a.cost[index])).collect(Collectors.toList()));
+        double bestScore = 0;
+        Vector2f bestDirection = new Vector2f(0, 0);
+
+        // Iterate over all cells in the sample grid
+        for (int x = 0; x < sample.length; x++) {
+            for (int y = 0; y < sample[x].length; y++) {
+                double score = latestSample.pathScores[y][x];
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestDirection = new Vector2f(-(centerX - x), centerY - y);
+                    if (bestDirection.lengthSquared() > 0.01f) {
+                        bestDirection = bestDirection.normalize();
+                    }
+
+                    latestWinner = new Vector2i(x, y);
+                }
+            }
         }
 
-        var bestRegion = evals.stream()
-                .min(Comparator.comparingDouble(
-                        eval -> IntStream.range(0, prioritizedEvals.size())
-                                .mapToDouble(i -> prioritizedEvals.get(i).indexOf(eval) / (double)(1 << i))
-                                .sum())).get();
-
-        latestWinner = bestRegion.region;
-        return bestRegion.suggestedDirection;
+        return bestDirection;
     }
+
+    private double clampDistance(double distance) {
+        return 1 - Math.exp(-distance);
+    }
+
 }

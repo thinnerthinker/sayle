@@ -8,7 +8,7 @@ import org.joml.Vector3f;
 import static org.lwjgl.glfw.GLFW.*;
 
 public class Camera {
-    private float angleX, angleY;
+    private float angleX = (float) (Math.PI), angleY = (float) (Math.PI / 2);
     private float rotationSpeed, moveSpeed;
     private float distance;
     private Vector3f pivotPosition;

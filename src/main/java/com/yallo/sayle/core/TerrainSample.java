@@ -1,5 +1,6 @@
 package com.yallo.sayle.core;
 
+import org.joml.Vector2f;
 import org.joml.Vector2i;
 
 import java.util.ArrayList;
@@ -8,11 +9,10 @@ import java.util.List;
 public class TerrainSample {
     public int width, height;
     public RaycastInfo[][] raw;
-    public float[][] quantized, covered;
-    public List<TerrainSampleRegion> regions;
+    public float[][] quantized, covered, pathScores;
     public float viewportWidth, viewportHeight;
 
-    private boolean[][] visited;
+    public List<List<Vector2i>> paths;
 
     public TerrainSample(RaycastInfo[][] raw, float viewportWidth, float viewportHeight) {
         this.raw = raw;
@@ -25,8 +25,9 @@ public class TerrainSample {
         quantized = new float[height][width];
         covered = new float[height][width];
 
-        visited = new boolean[height][width];
-        regions = new ArrayList<>();
+        pathScores = new float[height][width];
+
+        paths = new ArrayList<>();
 
         calculate();
     }
@@ -34,7 +35,7 @@ public class TerrainSample {
     private void calculate() {
         quantized = quantize(raw);
         covered = coverDangerousEdges(quantized);
-        regions = extractRegions(raw, covered);
+        pathScores = getPathScores(raw, covered);
     }
 
     private float[][] quantize(RaycastInfo[][] sample) {
@@ -179,56 +180,75 @@ public class TerrainSample {
         return covered;
     }
 
-    List<TerrainSampleRegion> extractRegions(RaycastInfo[][] sample, float[][] distances) {
-        regions.clear();
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                visited[y][x] = false;
-            }
-        }
+    float[][] getPathScores(RaycastInfo[][] sample, float[][] distances) {
+        int centerX = width / 2;
+        int centerY = height / 2;
+
+        paths.clear();
 
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                if (visited[y][x]) {
-                    continue;
-                }
+                int ix = x;
+                int iy = y;
 
-                int maxWidth = width - x;
-                int maxHeight = height - y;
+                int dx = Math.abs(centerX - ix);
+                int dy = Math.abs(centerY - iy);
+                int sx = ix < centerX ? 1 : -1;
+                int sy = iy < centerY ? 1 : -1;
+                int err = (dx > dy ? dx : -dy) / 2;
+                int e2;
 
-                int regWidth;
-                for (regWidth = 1; regWidth < maxWidth; regWidth++) {
-                    if (visited[y][x + regWidth] || !(sample[y][x].solid == sample[y][x + regWidth].solid &&
-                            distances[y][x] == distances[y][x + regWidth])) {
+                double score = 0.0;
+                List<Vector2i> path = new ArrayList<>();
+
+                //System.out.printf("start from (%d, %d)\n", ix, iy);
+
+                while (true) {
+                    // Process the current cell
+                    float distance = clampDistance(distances[iy][ix]);
+                    path.add(new Vector2i(ix, iy));
+                    score += distance;
+
+                    //System.out.printf("(%d, %d) - Score: %.2f\n", ix, iy, distance);
+
+                    if (ix == centerX && iy == centerY) {
                         break;
                     }
-                }
 
-                int regHeight;
-                outerLoop:
-                for (regHeight = 1; regHeight < maxHeight; regHeight++) {
-                    for (int rx = 0; rx < regWidth; rx++) {
-                        if (!(sample[y][x].solid == sample[y + regHeight][x + rx].solid &&
-                                distances[y][x] == distances[y + regHeight][x + rx])) {
-                            break outerLoop;
-                        }
+                    e2 = err;
+                    if (e2 > -dx) {
+                        err -= dy;
+                        ix += sx;
+                    }
+                    if (e2 < dy) {
+                        err += dx;
+                        iy += sy;
                     }
                 }
 
-                for (int ry = 0; ry < regHeight; ry++) {
-                    for (int rx = 0; rx < regWidth; rx++) {
-                        visited[y + ry][x + rx] = true;
+                var firstCell = path.get(0);
+                float dist = distances[firstCell.y][firstCell.x];
+                int len = 1;
+                for (int i = 1; i < path.size(); i++) {
+                    var cell = path.get(i);
+
+                    if (Math.abs(distances[cell.y][cell.x] - dist) > 1f) {
+                        break;
                     }
+                    len++;
                 }
 
-                regions.add(new TerrainSampleRegion(new Vector2i(x, y), regWidth, regHeight, distances[y][x], sample[y][x]));
+                pathScores[y][x] = (float) (dist / Math.pow(len, 0.7f));
+                paths.add(path);  // Add the path for this start point
+
+                //System.out.println("end" + path.size());
             }
         }
 
-        return regions;
+        return pathScores;
     }
 
-    public List<TerrainSampleRegion> getRegions() {
-        return regions;
+    private float clampDistance(double distance) {
+        return (float) (1 - Math.exp(-distance));
     }
 }

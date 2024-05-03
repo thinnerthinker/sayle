@@ -3,10 +3,12 @@ package com.yallo.sayle.sandbox.game;
 import com.yallo.sayle.core.*;
 import com.yallo.sayle.sandbox.input.Input;
 import org.joml.Vector2f;
+import org.joml.Vector2i;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
@@ -27,7 +29,7 @@ public class FlightTestGame extends Game {
         camera = new Camera(0.25f, 0.10f, 10f);
         character = new Character(new CharacterState(new Vector3f(0f, 0f, 0f),
                 20f),
-                1f);
+                2f);
 
         ArrayList<SolidBox> obstacles = createHoles(-30, -30, 3);
         course = new ObstacleCourse(obstacles);
@@ -71,13 +73,15 @@ public class FlightTestGame extends Game {
     @Override
     public void update(double dt) {
         if (Input.isKeyPressed(GLFW_KEY_SPACE)) {
-            mouseCaptured = !mouseCaptured;
+            /*mouseCaptured = !mouseCaptured;
 
             if (mouseCaptured) {
                 glfwSetInputMode(flightWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             } else {
                 glfwSetInputMode(flightWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            }
+            }*/
+
+
         }
 
         Vector2f input = flight.desiredInput(character.state, course);
@@ -90,7 +94,10 @@ public class FlightTestGame extends Game {
         camera.setPivotPosition(character.state.position);
         camera.update((float) dt);
 
+        System.out.println(character.state.position);
+
         if (character.state.position.z < course.boxes.get(0).min.z) {
+            System.out.println("fsf");
             course.boxes.remove(0);
             course.boxes.remove(0);
             course.boxes.remove(0);
@@ -192,43 +199,73 @@ public class FlightTestGame extends Game {
     }
 
     @Override
-    public void drawRegions() {
-        drawDepthField(((LocalSayleServer)server).latestSample.covered);
+    public void drawPathScores() {
+        var sample = ((LocalSayleServer)server).latestSample.pathScores;
+        if (sample == null) return;
 
-        var sample = ((LocalSayleServer) server).latestSample;
-        var regions = ((LocalSayleServer) server).latestSample.regions;
-        var bestRegion = ((LocalSayleServer) server).latestWinner;
+        int rows = sample.length;
+        int cols = sample[0].length;
 
-        float colorBump = 1f / (regions.size() - 1);
-        float color = 0;
+        float squareWidth = 2.0f / cols;
+        float squareHeight = 2.0f / rows;
 
-        Random random = new Random(12);
+        float minDistance = Float.POSITIVE_INFINITY;
+        float maxDistance = Float.NEGATIVE_INFINITY;
 
-        glBegin(GL_QUADS);
-        for (var region : regions) {
-            if (region == bestRegion) {
-                glColor3f(1, 0 ,0);
-            } else {
-                glColor3f(color, color, color);
+        for (int y = 0; y < rows; y++) {
+            for (int x = 0; x < cols; x++) {
+                float distance = Math.min(sample[y][x], 50);
+                if (distance < minDistance) minDistance = distance;
+                if (distance > maxDistance) maxDistance = distance;
             }
+        }
 
-            color += colorBump;
+        // Check if minDistance and maxDistance are too close
+        if (Math.abs(maxDistance - minDistance) < 1e-5) {
+            minDistance = 0;
+            maxDistance = 1;
+        }
 
-            float squareWidth = 2.0f / sample.width;
-            float squareHeight = 2.0f / sample.height;
+        for (int y = 0; y < rows; y++) {
+            for (int x = 0; x < cols; x++) {
+                float distance = Math.min(sample[y][x], 50);
 
-            float posX = -(-1 + region.position.x * squareWidth);
-            float posY = -(-1 + region.position.y * squareHeight);
+                float colorIntensity;
+                //if (distance)
+                colorIntensity = (distance - minDistance) / (maxDistance - minDistance);
+                glColor3f(colorIntensity, colorIntensity, colorIntensity);
 
-            squareWidth *= region.width;
-            squareHeight *= region.height;
+                float posX = -(-1 + x * squareWidth); // Adjusted for NDC
+                float posY = -(-1 + y * squareHeight); // Adjusted for NDC
 
+                glBegin(GL_QUADS);
+                glVertex2f(posX, posY);
+                glVertex2f(posX - squareWidth, posY);
+                glVertex2f(posX - squareWidth, posY - squareHeight);
+                glVertex2f(posX, posY - squareHeight);
+                glEnd();
+            }
+        }
+
+        glColor3f(1, 0, 0);
+
+        var localServer = (LocalSayleServer) server;
+        for (var p : (localServer.latestSample.paths.stream()
+                .filter(x -> x.get(0).equals(localServer.latestWinner))
+                .collect(Collectors.toList()))
+                .get(0)) {
+            System.out.println(p.x + " " + p.y);
+
+            float posX = -(-1 + p.x * squareWidth); // Adjusted for NDC
+            float posY = -(-1 + p.y * squareHeight); // Adjusted for NDC
+
+            glBegin(GL_QUADS);
             glVertex2f(posX, posY);
             glVertex2f(posX - squareWidth, posY);
             glVertex2f(posX - squareWidth, posY - squareHeight);
             glVertex2f(posX, posY - squareHeight);
+            glEnd();
         }
-        glEnd();
     }
 
     @Override

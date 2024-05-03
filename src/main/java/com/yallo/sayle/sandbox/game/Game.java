@@ -18,7 +18,7 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 
 public abstract class Game {
     // The flightWindow handle
-    protected long flightWindow, depthFieldWindow, quantizedDepthFieldWindow, coveredDepthFieldWindow, bestRegionWindow;
+    protected long flightWindow, depthFieldWindow, quantizedDepthFieldWindow, coveredDepthFieldWindow, pathScoresWindow;
 
     public void run() {
         init();
@@ -39,8 +39,8 @@ public abstract class Game {
         glfwFreeCallbacks(coveredDepthFieldWindow);
         glfwDestroyWindow(coveredDepthFieldWindow);
 
-        glfwFreeCallbacks(bestRegionWindow);
-        glfwDestroyWindow(bestRegionWindow);
+        glfwFreeCallbacks(pathScoresWindow);
+        glfwDestroyWindow(pathScoresWindow);
 
         // Terminate GLFW and free the error callback
         glfwTerminate();
@@ -53,7 +53,7 @@ public abstract class Game {
     public abstract void drawRawDepthField();
     public abstract void drawQuantizedDepthField();
     public abstract void drawCoveredDepthField();
-    public abstract void drawRegions();
+    public abstract void drawPathScores();
     public abstract void dispose();
 
     private void init() {
@@ -69,7 +69,7 @@ public abstract class Game {
         depthFieldWindow = createWindow("Depth Field", 200, 200, 0, 800, flightWindow);
         quantizedDepthFieldWindow = createWindow("Quantized Depth Field", 200, 200, 200, 800, flightWindow);
         coveredDepthFieldWindow = createWindow("Covered Depth Field", 200, 200, 400, 800, flightWindow);
-        bestRegionWindow = createWindow("Best Region", 200, 200, 600, 800, flightWindow);
+        pathScoresWindow = createWindow("PathScores", 200, 200, 600, 800, flightWindow);
 
         // This line is critical for LWJGL's interoperation with GLFW's
         // OpenGL context, or any context that is managed externally.
@@ -85,7 +85,7 @@ public abstract class Game {
         glfwShowWindow(depthFieldWindow);
         glfwShowWindow(quantizedDepthFieldWindow);
         glfwShowWindow(coveredDepthFieldWindow);
-        glfwShowWindow(bestRegionWindow);
+        glfwShowWindow(pathScoresWindow);
 
         glfwSetInputMode(flightWindow, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
@@ -177,11 +177,11 @@ public abstract class Game {
             drawCoveredDepthField();
             glfwSwapBuffers(coveredDepthFieldWindow);
 
-            glfwMakeContextCurrent(bestRegionWindow);
+            glfwMakeContextCurrent(pathScoresWindow);
             glClearColor(0f / 255, 0f / 255, 0f / 255, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
-            drawRegions();
-            glfwSwapBuffers(bestRegionWindow);
+            drawPathScores();
+            glfwSwapBuffers(pathScoresWindow);
 
             glfwMakeContextCurrent(flightWindow);
 
