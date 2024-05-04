@@ -41,10 +41,10 @@
           owner = "thinnerthinker";
           repo = pname;
           rev = version;
-          hash = "sha256-I00kc1aGwsLblWNK6l80jf2GJPChAol+S90jC/lM1vQ=";
+          hash = "sha256-nnyYVkLGgX8ZnS04GdVaHfd1pCfe56bAogPCP6coi30=";
         };
 
-        mvnHash = "sha256-6wCGiMdeSqfJk8rVKNUMv9PefWZE2xmobQYgGPSA4Xs=";
+        mvnHash = "sha256-Hb9IHasCyYrNMh9in1cg/1OAvEbYfb9m13aerfO4jPk=";
 
         buildInputs = libs ++ javaDeps ++ [ pkgs.makeWrapper ];
 
