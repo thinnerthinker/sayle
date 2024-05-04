@@ -238,7 +238,8 @@ public class TerrainSample {
                     len++;
                 }
 
-                pathScores[y][x] = (float) (dist / Math.pow(len, 0.7f));
+                var pos = sample[y][x].position;
+                pathScores[y][x] = (float) ((float) (dist / Math.pow(len, 0.7f)) / Math.pow(new Vector2f(pos.x, pos.y).length(), 0.1f));
                 paths.add(path);  // Add the path for this start point
 
                 //System.out.println("end" + path.size());
