@@ -94,10 +94,7 @@ public class FlightTestGame extends Game {
         camera.setPivotPosition(character.state.position);
         camera.update((float) dt);
 
-        System.out.println(character.state.position);
-
         if (character.state.position.z < course.boxes.get(0).min.z) {
-            System.out.println("fsf");
             course.boxes.remove(0);
             course.boxes.remove(0);
             course.boxes.remove(0);
@@ -254,7 +251,6 @@ public class FlightTestGame extends Game {
                 .filter(x -> x.get(0).equals(localServer.latestWinner))
                 .collect(Collectors.toList()))
                 .get(0)) {
-            System.out.println(p.x + " " + p.y);
 
             float posX = -(-1 + p.x * squareWidth); // Adjusted for NDC
             float posY = -(-1 + p.y * squareHeight); // Adjusted for NDC
