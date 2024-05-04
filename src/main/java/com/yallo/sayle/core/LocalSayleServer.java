@@ -37,7 +37,7 @@ public class LocalSayleServer implements SayleServer {
 
                 if (score > bestScore) {
                     bestScore = score;
-                    bestDirection = new Vector2f(-(centerX - x), centerY - y);
+                    bestDirection = new Vector2f(x - centerX, -(y - centerY));
                     if (bestDirection.lengthSquared() > 0.01f) {
                         bestDirection = bestDirection.normalize();
                     }

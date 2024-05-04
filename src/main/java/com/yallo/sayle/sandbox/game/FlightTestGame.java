@@ -29,7 +29,7 @@ public class FlightTestGame extends Game {
         camera = new Camera(0.25f, 0.10f, 10f);
         character = new Character(new CharacterState(new Vector3f(0f, 0f, 0f),
                 20f),
-                2f);
+                1f);
 
         ArrayList<SolidBox> obstacles = createHoles(-30, -30, 3);
         course = new ObstacleCourse(obstacles);
