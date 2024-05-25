@@ -231,34 +231,20 @@ public class TerrainSample {
                 var firstCell = path.get(0);
                 float dist = distances[firstCell.y][firstCell.x];
                 int len = 1;
-                float wallDist = Float.POSITIVE_INFINITY;
                 for (int i = 1; i < path.size(); i++) {
                     var cell = path.get(i);
 
                     if (Math.abs(distances[cell.y][cell.x] - dist) > 1f) {
-                        wallDist = distances[cell.y][cell.x];
                         break;
                     }
                     len++;
                 }
 
                 var pos = sample[y][x].position;
-                var safeDist = width / viewportWidth * Parameters.coveringSafeDistance / wallDist;
-                pathScores[y][x] = (float) (clampDistance(dist) * Math.exp(-Math.pow(((len - safeDist) / 1f), 2f)));
+                pathScores[y][x] = (float) ((float) (dist / Math.pow(len, 0.6f)) / Math.pow(new Vector2f(pos.x, pos.y).length(), 0.1f));
+                paths.add(path);  // Add the path for this start point
 
-
-                var pathDist = new Vector2f(pos.x, pos.y * 10).length();
-                if (pathDist >= 10) {
-                    pathDist = Math.min(pathDist, 1000);
-
-                    pathScores[y][x] = 0;
-
-                    //System.out.println(clampDistance(distances[y][x]) + " " + pathScores[y][x]);
-                    // pathScores[y][x] /= (float) Math.pow(pathDist, 0.05f);
-                    //System.out.println(pathScores[y][x] + " csel");
-                }
-
-                paths.add(path);
+                //System.out.println("end" + path.size());
             }
         }
 

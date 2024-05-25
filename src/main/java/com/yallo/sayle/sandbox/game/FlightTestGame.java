@@ -31,7 +31,7 @@ public class FlightTestGame extends Game {
                 20f),
                 0.8f);
 
-        ArrayList<SolidBox> obstacles = createJungle(-30, -20, 3);
+        ArrayList<SolidBox> obstacles = createHoles(-30, -20, 3);
         course = new ObstacleCourse(obstacles);
 
 
