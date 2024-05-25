@@ -1,5 +1,6 @@
 package com.yallo.sayle.sandbox.game;
 
+import com.yallo.sayle.core.Parameters;
 import com.yallo.sayle.core.RaycastInfo;
 import com.yallo.sayle.sandbox.resources.Mesh;
 import com.yallo.sayle.sandbox.resources.Resources;
@@ -106,7 +107,7 @@ public class SolidBox {
         float tmax = Math.min(Math.min(Math.max(t1, t2), Math.max(t3, t4)), Math.max(t5, t6));
 
         if (tmax < 0 || tmin > tmax) {
-            return new RaycastInfo(Float.POSITIVE_INFINITY, false, new Vector3f(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
+            return new RaycastInfo(Parameters.veryFar, false, new Vector3f(rayStart).add(new Vector3f(rayDir).mul(Parameters.veryFar)),
                     new Vector3f(0, 0, 0));  // No intersection
         }
 

@@ -29,9 +29,9 @@ public class FlightTestGame extends Game {
         camera = new Camera(0.25f, 0.10f, 10f);
         character = new Character(new CharacterState(new Vector3f(0f, 0f, 0f),
                 20f),
-                1f);
+                0.8f);
 
-        ArrayList<SolidBox> obstacles = createHoles(-30, -30, 3);
+        ArrayList<SolidBox> obstacles = createJungle(-30, -20, 3);
         course = new ObstacleCourse(obstacles);
 
 
@@ -60,6 +60,26 @@ public class FlightTestGame extends Game {
             obstacles.add(new SolidBox(new Vector3f(holeX + holeSize, -borderSize, z), new Vector3f(borderSize, borderSize, z + holeDepth)));
             obstacles.add(new SolidBox(new Vector3f(holeX, -borderSize, z), new Vector3f(holeX + holeSize, holeY, z + holeDepth)));
             obstacles.add(new SolidBox(new Vector3f(holeX, holeY + holeSize, z), new Vector3f(holeX + holeSize, borderSize, z + holeDepth)));
+        }
+
+        return obstacles;
+    }
+
+    public ArrayList<SolidBox> createJungle(float startZ, float stepZ, float count) {
+        ArrayList<SolidBox> obstacles = new ArrayList<>();
+        Random random = new Random();
+
+        float treeWidth = 1, treeDepth = 1, treeRange = 30, treeHeight = 50;
+
+        for (int i = 0; i < count; i++) {
+            float z = startZ + i * stepZ;
+
+            for (int j = 0; j < 3; j++) {
+                float treeX = random.nextFloat() * treeRange - treeRange / 2;
+                //float treeY = random.nextFloat() * treeRange - treeRange / 2;
+
+                obstacles.add(new SolidBox(new Vector3f(treeX, -10, z), new Vector3f(treeX + treeDepth, treeHeight, z + treeDepth)));
+            }
         }
 
         return obstacles;

@@ -14,10 +14,9 @@
         libGL
         glfw
         stdenv.cc.cc.lib
-
       ]);
 
-      java = pkgs.jdk17;
+      java = pkgs.jdk11;
       maven = pkgsStable.maven;
 
       javaDeps = ([
@@ -41,7 +40,7 @@
           owner = "thinnerthinker";
           repo = pname;
           rev = version;
-          hash = "sha256-nnyYVkLGgX8ZnS04GdVaHfd1pCfe56bAogPCP6coi30=";
+          hash = "sha256-ASH79ULjyxsifLLYVe+PArzZBiB/7x+drC5T3FdqikI=";
         };
 
         mvnHash = "sha256-Hb9IHasCyYrNMh9in1cg/1OAvEbYfb9m13aerfO4jPk=";
